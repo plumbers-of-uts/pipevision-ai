@@ -496,7 +496,7 @@
   .page-btn:hover, .page-btn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 700; }
 
   /* ── Model Info ── */
-  .model-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .model-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px; max-width: 480px; }
   .model-card {
     background: var(--bg-card); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 20px;
@@ -597,7 +597,7 @@
     .dash-grid { grid-template-columns: 1fr; }
     .detect-layout { grid-template-columns: 1fr; }
     .results-layout { grid-template-columns: 1fr; }
-    .model-grid { grid-template-columns: repeat(2, 1fr); }
+    .model-grid { grid-template-columns: 1fr; }
     .dataset-grid { grid-template-columns: 1fr; }
   }
 
@@ -958,9 +958,7 @@
               <div class="model-selector">
                 <span class="model-label"><i class="fa-solid fa-microchip" style="color:var(--accent); margin-right:4px"></i> Detection Model</span>
                 <select class="model-select">
-                  <option>YOLOv8-m — Object Detection (Recommended)</option>
-                  <option>ResNet50 — Image Classification</option>
-                  <option>EfficientNet-B4 — Image Classification</option>
+                  <option>YOLOv8-m — Object Detection</option>
                 </select>
                 <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-sec); cursor:pointer; white-space:nowrap;">
                   <input type="checkbox" checked style="accent-color:var(--accent)"> Ensemble
@@ -1326,7 +1324,7 @@
       <!-- ══════════════ MODEL INFO ══════════════ -->
       <div class="page fade-in" id="page-models">
         <div class="section-title">Model Information</div>
-        <div class="section-sub">CNN architectures used for sewer pipe defect detection</div>
+        <div class="section-sub">YOLO-based object detection for sewer pipe defect analysis</div>
 
         <!-- Model cards -->
         <div class="model-grid">
@@ -1348,41 +1346,6 @@
             </div>
           </div>
 
-          <!-- ResNet50 -->
-          <div class="model-card" style="--mc-color:#3b82f6; --mc-bg:#3b82f622">
-            <div class="model-card-header">
-              <div class="model-icon"><i class="fa-solid fa-layer-group"></i></div>
-              <span class="model-type-badge">Classification</span>
-            </div>
-            <div class="model-name">ResNet50</div>
-            <div class="model-desc">Deep residual network with 50 layers. Skip connections mitigate the vanishing gradient problem. Fine-tuned on the sewer defect dataset via transfer learning from ImageNet.</div>
-            <div class="model-specs">
-              <div class="spec-row"><span class="spec-key">Parameters</span><span class="spec-val">25.6M</span></div>
-              <div class="spec-row"><span class="spec-key">Input Size</span><span class="spec-val">224 × 224</span></div>
-              <div class="spec-row"><span class="spec-key">Top-1 Acc.</span><span class="spec-val" style="color:var(--green)">93.2%</span></div>
-              <div class="spec-row"><span class="spec-key">Inference</span><span class="spec-val">12.4ms / GPU</span></div>
-              <div class="spec-row"><span class="spec-key">Pretrained</span><span class="spec-val">ImageNet-1k</span></div>
-              <div class="spec-row"><span class="spec-key">Task</span><span class="spec-val">Classification</span></div>
-            </div>
-          </div>
-
-          <!-- EfficientNet -->
-          <div class="model-card" style="--mc-color:#8b5cf6; --mc-bg:#8b5cf622">
-            <div class="model-card-header">
-              <div class="model-icon"><i class="fa-solid fa-bolt"></i></div>
-              <span class="model-type-badge">Classification</span>
-            </div>
-            <div class="model-name">EfficientNet-B4</div>
-            <div class="model-desc">Compound-scaled CNN using Neural Architecture Search. Achieves superior accuracy-efficiency trade-off. Best single-model performance on the sewer defect test set.</div>
-            <div class="model-specs">
-              <div class="spec-row"><span class="spec-key">Parameters</span><span class="spec-val">19.3M</span></div>
-              <div class="spec-row"><span class="spec-key">Input Size</span><span class="spec-val">380 × 380</span></div>
-              <div class="spec-row"><span class="spec-key">Top-1 Acc.</span><span class="spec-val" style="color:var(--green)">94.7%</span></div>
-              <div class="spec-row"><span class="spec-key">Inference</span><span class="spec-val">18.1ms / GPU</span></div>
-              <div class="spec-row"><span class="spec-key">Pretrained</span><span class="spec-val">ImageNet-21k</span></div>
-              <div class="spec-row"><span class="spec-key">Task</span><span class="spec-val">Classification</span></div>
-            </div>
-          </div>
         </div>
 
         <!-- Training metrics -->
