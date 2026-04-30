@@ -1,0 +1,913 @@
+{
+  "version": "1.0",
+  "sessionId": "pipevision-ext-001",
+  "createdAt": "2026-04-30",
+  "project": {
+    "name": "PipeVision AI Extension",
+    "team": "Plumbers of UTS",
+    "scope": "Initial experiment (YOLO26m on SageMaker) → public browser-based demo",
+    "useCase": "UTS assignment demo + portfolio public demo (A+D)",
+    "complexity": "complex"
+  },
+  "references": {
+    "designDoc": "docs/plans/pipevision-extension-design.md",
+    "execPlan": "docs/exec-plans/active/pipevision-extension.md",
+    "apiContracts": ".agents/skills/_shared/core/api-contracts/pipevision-contracts.md",
+    "memory": ".serena/memories/plan-pipevision-extension.md",
+    "designSystem": "DESIGN.md",
+    "mockup": "gui-mockup.html",
+    "initialExperimentPdf": "/Users/gracefullight/Downloads/Assignment-3-PartC-JadynBraganza-26055044-2.pdf"
+  },
+  "constraints": [
+    "Zero infrastructure ops, zero cost, 24/7 availability",
+    "Desktop-first (mobile = samples-only fallback)",
+    "Honest metric reporting (mAP@0.5 = 0.44)",
+    "kebab-case for files and folders",
+    "All user-visible strings: English (no i18n in v1)"
+  ],
+  "techStack": {
+    "build": "Vite 6+ + React 19 + TypeScript",
+    "runtime": "bun 1.1+",
+    "styling": "Tailwind CSS + CSS variables (DESIGN.md HSL tokens)",
+    "uiPrimitives": "shadcn/ui (React 19 compatible)",
+    "inference": "onnxruntime-web (WebGPU EP -> WASM SIMD fallback)",
+    "localStorage": "Dexie (IndexedDB wrapper)",
+    "charts": "recharts",
+    "router": "react-router-dom@7 (HashRouter)",
+    "lint": "biome",
+    "tooling": "mise + commitlint",
+    "hostingCode": "GitHub Pages (gh-pages via GitHub Actions)",
+    "hostingModel": "Hugging Face Hub",
+    "fallbackServer": "Hugging Face Spaces (Gradio + ultralytics .pt)",
+    "caching": "Service Worker (cache-first for model)"
+  },
+  "agents": {
+    "backend-engineer": "Model conversion (Python), HF Spaces app, ML retraining experiments",
+    "frontend-engineer": "React UI, ORT runtime wiring, state management, Service Worker",
+    "db-engineer": "IndexedDB schema (Dexie), repository layer",
+    "tf-infra-engineer": "GitHub Actions, gh-pages deploy",
+    "qa-reviewer": "WCAG, Lighthouse, honest metrics audit"
+  },
+  "sprints": [
+    {
+      "id": "sprint-1",
+      "milestone": "M1",
+      "name": "Model extraction + ONNX conversion",
+      "priority": "P0",
+      "estimatedDays": "1-2",
+      "gate": "ONNX export passes + |Δ mAP@0.5| < 0.005 + HF Hub model URL public",
+      "fallbackOnFailure": "Promote sprint-2 HF Spaces app as the primary demo path",
+      "blocks": ["sprint-2", "sprint-3"],
+      "tasks": [
+        {
+          "id": "T1.1",
+          "title": "model/download.sh — extract best.pt from SageMaker S3",
+          "agent": "backend-engineer",
+          "priority": "P0",
+          "dependencies": [],
+          "acceptanceCriteria": [
+            "Script downloads model.tar.gz from SageMaker S3 bucket",
+            "Extracts best.pt to model/artifacts/",
+            "Documented S3 URI variable (env or arg)"
+          ]
+        },
+        {
+          "id": "T1.2",
+          "title": "model/export.py — PT -> ONNX FP16 (half=True, dynamic=False, nms=False)",
+          "agent": "backend-engineer",
+          "priority": "P0",
+          "dependencies": ["T1.1"],
+          "acceptanceCriteria": [
+            "Outputs model/artifacts/yolo26m-fp16.onnx (~44MB)",
+            "Uses opset=17, simplify=True",
+            "ORT optimizer applied (constant fold + op fusion)"
+          ]
+        },
+        {
+          "id": "T1.3",
+          "title": "model/verify.py — PT vs ONNX mAP regression test",
+          "agent": "backend-engineer",
+          "priority": "P0",
+          "dependencies": ["T1.2"],
+          "acceptanceCriteria": [
+            "Runs inference on valid set (196 images) for both PT and ONNX",
+            "Computes mAP@0.5 for both",
+            "Asserts |Δ mAP@0.5| < 0.005 (FAIL otherwise)"
+          ]
+        },
+        {
+          "id": "T1.4",
+          "title": "model/metadata.yaml + HF Hub README.md (model card)",
+          "agent": "backend-engineer",
+          "priority": "P0",
+          "dependencies": ["T1.2"],
+          "acceptanceCriteria": [
+            "metadata.yaml contains model info, 7 classes with severity, inference thresholds, metrics",
+            "README.md (model card) with dataset, training config, metrics table from PDF, intended use, limitations"
+          ]
+        },
+        {
+          "id": "T1.5",
+          "title": "model/upload.sh — create HF Hub model repo and push artifacts",
+          "agent": "backend-engineer",
+          "priority": "P0",
+          "dependencies": ["T1.3", "T1.4"],
+          "acceptanceCriteria": [
+            "Pushes model.onnx, metadata.yaml, README.md to huggingface.co/<user>/pipevision-yolo26m",
+            "Public repo accessible via HTTPS with CORS-friendly headers",
+            "URL recorded in shared/config/env.ts default"
+          ]
+        },
+        {
+          "id": "T1.6",
+          "title": "Register mise tasks: model:download, model:export, model:verify, model:upload",
+          "agent": "backend-engineer",
+          "priority": "P1",
+          "dependencies": ["T1.5"],
+          "acceptanceCriteria": [
+            "mise.toml has 4 tasks",
+            "mise tasks --all lists them",
+            "Each task documented with description"
+          ]
+        },
+        {
+          "id": "T1.7",
+          "title": ".gitignore additions (model/artifacts/, *.onnx, *.pt, *.tar.gz)",
+          "agent": "backend-engineer",
+          "priority": "P1",
+          "dependencies": [],
+          "acceptanceCriteria": [
+            ".gitignore prevents binary artifacts from being committed",
+            "model/artifacts/ excluded but model/ source files tracked"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sprint-2",
+      "milestone": "M2",
+      "name": "HF Spaces fallback + project bootstrap",
+      "priority": "P0",
+      "estimatedDays": "1",
+      "gate": "bun run dev shows sidebar + 4 empty routes; HF Spaces demo URL is live",
+      "blockedBy": ["sprint-1"],
+      "blocks": ["sprint-3"],
+      "tasks": [
+        {
+          "id": "T2.1",
+          "title": "HF Spaces Gradio app (app.py, requirements.txt, README.md)",
+          "agent": "backend-engineer",
+          "priority": "P0",
+          "dependencies": ["T1.1"],
+          "acceptanceCriteria": [
+            "Gradio app loads best.pt and exposes detect(image, conf, iou)",
+            "2-3 example images preloaded",
+            "Deployed to huggingface.co/spaces/<user>/pipevision-yolo26m and accessible publicly"
+          ]
+        },
+        {
+          "id": "T2.2",
+          "title": "Vite + React 19 + bun + TypeScript project init",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": [],
+          "acceptanceCriteria": [
+            "package.json with react@19, react-dom@19, vite@6+, typescript",
+            "bun install succeeds",
+            "bun run dev serves Vite dev server",
+            "tsconfig strict mode enabled"
+          ]
+        },
+        {
+          "id": "T2.3",
+          "title": "Tailwind + shadcn/ui + DESIGN.md HSL tokens to :root CSS vars",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T2.2"],
+          "acceptanceCriteria": [
+            "tailwind.config.js extends theme using CSS variables",
+            "All HSL tokens from DESIGN.md sections 1.2 (background, fg, accent, severity, functional, border) ported",
+            "shadcn/ui CLI initialized; sample button renders with theme"
+          ]
+        },
+        {
+          "id": "T2.4",
+          "title": "biome + commitlint + mise dev tasks (dev, build, lint, test)",
+          "agent": "tf-infra-engineer",
+          "priority": "P1",
+          "dependencies": ["T2.2"],
+          "acceptanceCriteria": [
+            "biome.json lint/format config",
+            "commitlint.config.js with conventional-commits",
+            "mise.toml has dev/build/lint/test/format tasks",
+            "Husky pre-commit hook running biome + commitlint"
+          ]
+        },
+        {
+          "id": "T2.5",
+          "title": "HashRouter + 4 route shells (dashboard/detect/history/models)",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T2.3"],
+          "acceptanceCriteria": [
+            "react-router-dom@7 installed",
+            "src/app/routes.tsx defines 4 routes",
+            "Each route renders empty page component (placeholder)",
+            "vite.config.ts has base: '/pipevision-ai/'"
+          ]
+        },
+        {
+          "id": "T2.6",
+          "title": "widgets/app-sidebar/ (mockup .sidebar markup translated)",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T2.5"],
+          "acceptanceCriteria": [
+            "Sidebar matches gui-mockup.html visually",
+            "4 nav items with active state via NavLink",
+            "Reserved bottom slot for model-status-pill (T3.7)"
+          ]
+        },
+        {
+          "id": "T2.7",
+          "title": "app/app.tsx layout shell (sidebar + outlet)",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T2.6"],
+          "acceptanceCriteria": [
+            "Sidebar persists across route changes",
+            "Main content area renders <Outlet />",
+            "ThemeProvider + ModelProvider wrapping (providers stubbed for now)"
+          ]
+        },
+        {
+          "id": "T2.8",
+          "title": "GitHub Actions deploy workflow (gh-pages)",
+          "agent": "tf-infra-engineer",
+          "priority": "P1",
+          "dependencies": ["T2.2"],
+          "acceptanceCriteria": [
+            ".github/workflows/deploy.yml on push to main",
+            "Steps: bun install, bun run build, upload-pages-artifact, deploy-pages",
+            "Site reachable at https://<user>.github.io/pipevision-ai/"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sprint-3",
+      "milestone": "M3",
+      "name": "Detect page + inference module + model loading UX",
+      "priority": "P0",
+      "estimatedDays": "3",
+      "gate": "Desktop upload -> bbox visualization < 3s after warmup; 7 classes correctly colored per DESIGN.md severity",
+      "blockedBy": ["sprint-1", "sprint-2"],
+      "blocks": ["sprint-4"],
+      "tasks": [
+        {
+          "id": "T3.1",
+          "title": "features/inference/runtime.ts — ORT session + WebGPU/WASM EP detection",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T1.5", "T2.7"],
+          "acceptanceCriteria": [
+            "createSession() returns ORT InferenceSession",
+            "Detects WebGPU support; falls back to WASM SIMD",
+            "Session creation logged with EP used and elapsed ms"
+          ]
+        },
+        {
+          "id": "T3.2",
+          "title": "features/inference/preprocess.ts — letterbox + Float16Array",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T3.1"],
+          "acceptanceCriteria": [
+            "Accepts HTMLImageElement or ImageBitmap",
+            "Resizes preserving aspect ratio with letterbox padding",
+            "Outputs Float16Array tensor [1,3,640,640] + scale + pad metadata"
+          ]
+        },
+        {
+          "id": "T3.3",
+          "title": "features/inference/postprocess.ts — NMS + coordinate restoration",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T3.1"],
+          "acceptanceCriteria": [
+            "Parses raw output tensor shape [1, 4+nc, 8400] or transposed",
+            "Filters by conf threshold, runs greedy NMS by IoU threshold",
+            "Restores box coordinates to original image space using scale/pad"
+          ]
+        },
+        {
+          "id": "T3.4",
+          "title": "features/inference/progress-tracker.ts — fetch + ReadableStream progress",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T3.1"],
+          "acceptanceCriteria": [
+            "fetchModelWithProgress(url, onProgress) returns ArrayBuffer",
+            "onProgress called with (loaded, total) for each chunk",
+            "Handles missing Content-Length gracefully (indeterminate mode)"
+          ]
+        },
+        {
+          "id": "T3.5",
+          "title": "app/providers/model-provider.tsx — ModelStatus state machine",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T3.4"],
+          "acceptanceCriteria": [
+            "Exposes useModelStatus() returning current ModelStatus",
+            "Phase transitions: idle -> fetching -> compiling -> warming -> ready",
+            "Cache hit path: idle -> compiling -> ready (source: 'cache')",
+            "Error states with retry support"
+          ]
+        },
+        {
+          "id": "T3.6",
+          "title": "Service Worker (public/service-worker.ts) + register-sw.ts",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T3.5"],
+          "acceptanceCriteria": [
+            "Cache-first strategy for HF Hub model URL",
+            "stale-while-revalidate for app code",
+            "Service Worker registered in main.tsx",
+            "Repeat visit serves model from cache (verified in DevTools)"
+          ]
+        },
+        {
+          "id": "T3.7",
+          "title": "widgets/model-status-pill/ (sidebar bottom)",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": ["T3.5", "T2.6"],
+          "acceptanceCriteria": [
+            "Color-coded dot: gray/amber/green/red",
+            "Compact label (e.g., 'Ready', 'Downloading 67%')",
+            "Hover popover with size/source/EP details"
+          ]
+        },
+        {
+          "id": "T3.8",
+          "title": "widgets/model-loader-banner/ (top of /detect)",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T3.5"],
+          "acceptanceCriteria": [
+            "Shows progress bar + downloaded/total MB + remaining estimate",
+            "Indeterminate spinner for compiling/warming phases",
+            "Auto-unmounts on phase 'ready'",
+            "Error state shows Retry + HF Spaces fallback link"
+          ]
+        },
+        {
+          "id": "T3.9",
+          "title": "widgets/image-dropzone/ (drag&drop + click upload)",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": [],
+          "acceptanceCriteria": [
+            "Accepts JPG/PNG up to 10MB",
+            "Validates dimensions and shows error toast on rejection",
+            "Disabled visual state when phase !== 'ready'",
+            "Keyboard accessible (Tab + Enter triggers file picker)"
+          ]
+        },
+        {
+          "id": "T3.10",
+          "title": "widgets/detection-canvas/ (bbox + label overlay)",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T3.3"],
+          "acceptanceCriteria": [
+            "<canvas> renders original image + bboxes",
+            "Box color uses DESIGN.md severity scale via class-color.ts",
+            "Label includes class name + confidence (e.g., 'Crack 0.91')",
+            "PNG download via canvas.toBlob()"
+          ]
+        },
+        {
+          "id": "T3.11",
+          "title": "widgets/detection-result-panel/ (right side details)",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": ["T3.10"],
+          "acceptanceCriteria": [
+            "Lists detections with class, confidence, bbox coordinates",
+            "Hover row highlights corresponding bbox in canvas",
+            "Aggregate count by class displayed at top"
+          ]
+        },
+        {
+          "id": "T3.12",
+          "title": "widgets/confidence-slider/ + widgets/class-legend/",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": ["T3.3"],
+          "acceptanceCriteria": [
+            "Two sliders: conf (0-1, default 0.25), IoU (0-1, default 0.45)",
+            "Re-runs postprocess on slider change without re-running model",
+            "Legend lists 7 classes with severity colors and counts"
+          ]
+        },
+        {
+          "id": "T3.13",
+          "title": "features/samples/catalog.ts + 6-10 sample images",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": [],
+          "acceptanceCriteria": [
+            "Sample images cover all 7 classes",
+            "Each sample has metadata (class, source, license)",
+            "Mobile samples-only mode shows precomputed result thumbnails"
+          ]
+        },
+        {
+          "id": "T3.14",
+          "title": "shared/lib/webgpu.ts + device.ts + mode branching",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T3.5"],
+          "acceptanceCriteria": [
+            "hasWebGPU() detects navigator.gpu",
+            "isMobile() detects viewport + UA",
+            "Mode resolution: full / wasm-degraded / samples-only",
+            "Mode exposed via context for components"
+          ]
+        },
+        {
+          "id": "T3.15",
+          "title": "pages/detect/detect-page.tsx assembly",
+          "agent": "frontend-engineer",
+          "priority": "P0",
+          "dependencies": ["T3.8", "T3.9", "T3.10", "T3.11", "T3.14"],
+          "acceptanceCriteria": [
+            "Layout: dropzone + canvas + result panel + slider",
+            "End-to-end flow: upload -> preprocess -> infer -> postprocess -> render",
+            "Mobile shows samples-only carousel instead of dropzone"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sprint-4",
+      "milestone": "M4",
+      "name": "Dashboard / History / Models pages",
+      "priority": "P1",
+      "estimatedDays": "2",
+      "gate": "All 4 pages visually match mockup; IndexedDB roundtrip works (save -> reload -> see)",
+      "blockedBy": ["sprint-3"],
+      "blocks": ["sprint-5"],
+      "tasks": [
+        {
+          "id": "T4.1",
+          "title": "features/history-store/db.ts — Dexie schema (HistoryRecord)",
+          "agent": "db-engineer",
+          "priority": "P1",
+          "dependencies": ["T2.2"],
+          "acceptanceCriteria": [
+            "Dexie schema version 1 with HistoryRecord table",
+            "Indexes on createdAt, modelVersion, detections.class",
+            "Migration path documented for future schema bumps"
+          ]
+        },
+        {
+          "id": "T4.2",
+          "title": "features/history-store/repository.ts — CRUD + pagination + filter",
+          "agent": "db-engineer",
+          "priority": "P1",
+          "dependencies": ["T4.1"],
+          "acceptanceCriteria": [
+            "createRecord, getById, list({page, size, filter}), deleteAll",
+            "Type-safe API exported via index.ts",
+            "Unit tests with fake-indexeddb"
+          ]
+        },
+        {
+          "id": "T4.3",
+          "title": "widgets/stat-card/ (5 variants: inspections/defects/accuracy/processing/model-status)",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": ["T4.2", "T3.5"],
+          "acceptanceCriteria": [
+            "variant prop selects icon/color/label",
+            "Pulls live data from history-store and model-provider",
+            "Empty state when no history (e.g., 'Run your first detection')"
+          ]
+        },
+        {
+          "id": "T4.4",
+          "title": "widgets/recent-detections/ (IndexedDB → grid)",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": ["T4.2"],
+          "acceptanceCriteria": [
+            "Shows last 6 records with thumbnail + top class + confidence",
+            "Click navigates to /history with that record opened",
+            "Empty state with CTA to /detect"
+          ]
+        },
+        {
+          "id": "T4.5",
+          "title": "widgets/defect-distribution-chart/ (recharts bar/donut)",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": ["T4.2"],
+          "acceptanceCriteria": [
+            "Aggregates detections across history by class",
+            "Uses DESIGN.md severity colors",
+            "Tooltip shows count + percentage"
+          ]
+        },
+        {
+          "id": "T4.6",
+          "title": "pages/dashboard/dashboard-page.tsx assembly",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": ["T4.3", "T4.4", "T4.5"],
+          "acceptanceCriteria": [
+            "Layout matches mockup #page-dashboard",
+            "5 stat cards + recent-detections + defect-distribution-chart",
+            "Honest 'Detection Accuracy' = mAP@0.5 = 0.44"
+          ]
+        },
+        {
+          "id": "T4.7",
+          "title": "widgets/history-table/ + widgets/history-filter-bar/",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": ["T4.2"],
+          "acceptanceCriteria": [
+            "Pagination matching mockup (1, 2, 3, ..., last + chevrons)",
+            "Filters: date range, class, severity",
+            "Bulk actions: delete selected, clear all (with confirm dialog)"
+          ]
+        },
+        {
+          "id": "T4.8",
+          "title": "features/export/csv-exporter.ts (Blob)",
+          "agent": "frontend-engineer",
+          "priority": "P2",
+          "dependencies": ["T4.2"],
+          "acceptanceCriteria": [
+            "Exports filtered history to CSV via Blob + a[download]",
+            "Column header: id, createdAt, class, confidence, bbox, modelVersion",
+            "Excludes imageBlob (binary)"
+          ]
+        },
+        {
+          "id": "T4.9",
+          "title": "pages/history/history-page.tsx assembly",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": ["T4.7", "T4.8"],
+          "acceptanceCriteria": [
+            "Layout matches mockup #page-history",
+            "Filter bar + table + pagination + export button"
+          ]
+        },
+        {
+          "id": "T4.10",
+          "title": "widgets/metrics-table/ (PDF Test/Validation tables)",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": [],
+          "acceptanceCriteria": [
+            "Two tables side by side or tabbed: Test, Validation",
+            "Columns: Class, Images, Instances, Precision, R, mAP@0.5, mAP@0.5:0.95",
+            "Data sourced from PDF (hardcoded JSON)"
+          ]
+        },
+        {
+          "id": "T4.11",
+          "title": "widgets/per-class-chart/ (per-class mAP bar chart)",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": [],
+          "acceptanceCriteria": [
+            "Bar chart of mAP@0.5 per class",
+            "Sorted descending or by class id",
+            "Highlights worst 2 classes"
+          ]
+        },
+        {
+          "id": "T4.12",
+          "title": "widgets/training-curve-chart/ (loss/mAP curves)",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": [],
+          "acceptanceCriteria": [
+            "Line chart with epoch on x-axis",
+            "Series: train loss, val loss, mAP@0.5",
+            "Replaces mockup chart-svg with recharts"
+          ]
+        },
+        {
+          "id": "T4.13",
+          "title": "widgets/future-work-cards/ (PDF Further Experiments x6)",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": [],
+          "acceptanceCriteria": [
+            "6 cards: Data Aug, Class Imbalance, Attention, Multi-scale, Extended Training, Faster R-CNN",
+            "Each card: status badge ('Planned'), description, expected impact",
+            "Links to corresponding sprint-7 task"
+          ]
+        },
+        {
+          "id": "T4.14",
+          "title": "pages/models/models-page.tsx assembly",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": ["T4.10", "T4.11", "T4.12", "T4.13"],
+          "acceptanceCriteria": [
+            "Layout matches mockup #page-models",
+            "Includes YOLO26 architecture diagram from PDF Figure 1",
+            "Class distribution visualization (long-tail 22.5:1 noted)"
+          ]
+        },
+        {
+          "id": "T4.15",
+          "title": "Auto-save detection to history (hook into T3.15)",
+          "agent": "frontend-engineer",
+          "priority": "P1",
+          "dependencies": ["T3.15", "T4.2"],
+          "acceptanceCriteria": [
+            "After successful detection, record persisted to IndexedDB",
+            "Includes thumbnail (250x250 jpeg)",
+            "Toast confirms 'Saved to history'"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sprint-5",
+      "milestone": "M5",
+      "name": "Polish + deploy",
+      "priority": "P2",
+      "estimatedDays": "1-2",
+      "gate": "Public URL passes all verification scenarios from design doc §11; Lighthouse Perf ≥85, A11y ≥95",
+      "blockedBy": ["sprint-4"],
+      "tasks": [
+        {
+          "id": "T5.1",
+          "title": "Honest metrics audit (Detection Accuracy = 0.44)",
+          "agent": "qa-reviewer",
+          "priority": "P1",
+          "dependencies": ["T4.6"],
+          "acceptanceCriteria": [
+            "All numerical claims sourced from PDF or live IndexedDB",
+            "No invented metrics anywhere in UI",
+            "Limitations section visible on /models"
+          ]
+        },
+        {
+          "id": "T5.2",
+          "title": "WCAG AA audit (focus rings, aria, keyboard nav)",
+          "agent": "qa-reviewer",
+          "priority": "P2",
+          "dependencies": ["sprint-4"],
+          "acceptanceCriteria": [
+            "axe-core or Lighthouse a11y score ≥95",
+            "All interactive elements have visible focus state",
+            "Sidebar nav fully keyboard accessible",
+            "Color contrast ratio ≥4.5:1 for text"
+          ]
+        },
+        {
+          "id": "T5.3",
+          "title": "First-load size measurement + code splitting",
+          "agent": "frontend-engineer",
+          "priority": "P2",
+          "dependencies": ["sprint-4"],
+          "acceptanceCriteria": [
+            "onnxruntime-web loaded via dynamic import",
+            "Initial JS bundle < 200KB gzip",
+            "Charts library lazy-loaded on /models route"
+          ]
+        },
+        {
+          "id": "T5.4",
+          "title": "HF Space ↔ main site cross-links",
+          "agent": "frontend-engineer",
+          "priority": "P2",
+          "dependencies": ["T2.1", "T4.14"],
+          "acceptanceCriteria": [
+            "Main site footer has 'Server-side demo' link to HF Space",
+            "/models page mentions both client and server demo paths",
+            "HF Space README links back to GitHub Pages site"
+          ]
+        },
+        {
+          "id": "T5.5",
+          "title": "README.md update (live demo URLs, stack, references)",
+          "agent": "frontend-engineer",
+          "priority": "P2",
+          "dependencies": ["T5.4"],
+          "acceptanceCriteria": [
+            "README has hero with screenshot/GIF",
+            "Live demo URL + HF Space URL + HF Hub model URL",
+            "Tech stack badges, references to PDF citations"
+          ]
+        },
+        {
+          "id": "T5.6",
+          "title": "Lighthouse measurement (Perf ≥85, A11y ≥95) + regressions fix",
+          "agent": "qa-reviewer",
+          "priority": "P2",
+          "dependencies": ["T5.2", "T5.3"],
+          "acceptanceCriteria": [
+            "Lighthouse mobile + desktop reports captured",
+            "Perf ≥85, A11y ≥95, Best Practices ≥90, SEO ≥90",
+            "Identified regressions fixed and re-measured"
+          ]
+        },
+        {
+          "id": "T5.7",
+          "title": "GitHub Pages production deploy + custom domain review",
+          "agent": "tf-infra-engineer",
+          "priority": "P2",
+          "dependencies": ["T2.8", "T5.6"],
+          "acceptanceCriteria": [
+            "Production site reachable at https://<user>.github.io/pipevision-ai/",
+            "HTTPS enforced",
+            "Custom domain decision documented (use or skip)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sprint-6",
+      "milestone": "Future Work — Client",
+      "name": "Client-side enhancements",
+      "priority": "P3",
+      "estimatedDays": "post-launch",
+      "gate": "Each task ships independently behind a feature flag if needed",
+      "blockedBy": ["sprint-5"],
+      "tasks": [
+        {
+          "id": "T6.1",
+          "title": "Background model prefetch on Dashboard mount",
+          "agent": "frontend-engineer",
+          "priority": "P3",
+          "dependencies": ["sprint-5"],
+          "acceptanceCriteria": [
+            "Dashboard mounts triggers low-priority fetch via fetch({priority:'low'})",
+            "Race-safe with explicit /detect navigation",
+            "Disabled on mobile (samples-only mode)"
+          ]
+        },
+        {
+          "id": "T6.2",
+          "title": "Move inference to Web Worker (after profiling)",
+          "agent": "frontend-engineer",
+          "priority": "P3",
+          "dependencies": ["sprint-5"],
+          "acceptanceCriteria": [
+            "Profile main-thread frame drops first; only adopt if >16ms blocks observed",
+            "Worker uses comlink or postMessage with transferable",
+            "ORT WebGPU EP works in worker context (or document fallback)"
+          ]
+        },
+        {
+          "id": "T6.3",
+          "title": "INT8 quantization + mobile full-inference mode",
+          "agent": "backend-engineer + frontend-engineer",
+          "priority": "P3",
+          "dependencies": ["T1.2", "sprint-5"],
+          "acceptanceCriteria": [
+            "INT8 model exported via ORT static quantization (calibration set ~200 imgs)",
+            "Δ mAP@0.5 < 0.03 vs FP16",
+            "Mobile mode upgraded from samples-only to full when model loaded"
+          ]
+        },
+        {
+          "id": "T6.4",
+          "title": "i18n (ko/en) via i18next or ARB",
+          "agent": "frontend-engineer",
+          "priority": "P3",
+          "dependencies": ["sprint-5"],
+          "acceptanceCriteria": [
+            "All UI strings extracted to translation files",
+            "Language toggle in sidebar",
+            "Conforms to .agents/rules/i18n-guide.md"
+          ]
+        },
+        {
+          "id": "T6.5",
+          "title": "Anonymous telemetry (P95 latency, EP distribution)",
+          "agent": "frontend-engineer",
+          "priority": "P3",
+          "dependencies": ["sprint-5"],
+          "acceptanceCriteria": [
+            "Local-first aggregation in IndexedDB; opt-in for external send",
+            "If external: PostHog or simple beacon (no PII)",
+            "Privacy notice in footer"
+          ]
+        },
+        {
+          "id": "T6.6",
+          "title": "Video / live camera detection (/detect-video route)",
+          "agent": "frontend-engineer",
+          "priority": "P3",
+          "dependencies": ["sprint-5"],
+          "acceptanceCriteria": [
+            "Frame extraction at 1-2 FPS via requestVideoFrameCallback",
+            "Continuous inference loop with backpressure",
+            "Recording / export of annotated MP4 (optional)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sprint-7",
+      "milestone": "Future Work — Model",
+      "name": "Model improvements (PDF Further Experiments)",
+      "priority": "P3",
+      "estimatedDays": "out-of-scope for v1, runs on SageMaker/Colab",
+      "gate": "Each retrained model passes sprint-1 verify.py and replaces HF Hub artifact",
+      "blockedBy": [],
+      "notes": "Each task ends by re-running T1.2 → T1.5 to publish new model. Demo auto-reflects via same HF Hub URL.",
+      "tasks": [
+        {
+          "id": "T7.1",
+          "title": "Mosaic + random crop + affine transform augmentation",
+          "agent": "backend-engineer",
+          "priority": "P3",
+          "dependencies": ["T1.1"],
+          "acceptanceCriteria": [
+            "Targeted at Hole/Joint offset/Buckling (low recall)",
+            "Recall on those classes improves ≥10%",
+            "Overall mAP@0.5 not regressed"
+          ]
+        },
+        {
+          "id": "T7.2",
+          "title": "Class-balanced sampling + Focal Loss",
+          "agent": "backend-engineer",
+          "priority": "P3",
+          "dependencies": ["T7.1"],
+          "acceptanceCriteria": [
+            "Long-tail classes (Hole, Buckling) mAP@0.5 improves ≥15%",
+            "Crack does not regress despite higher relative weight on rare classes"
+          ]
+        },
+        {
+          "id": "T7.3",
+          "title": "CBAM or Deformable Attention in backbone",
+          "agent": "backend-engineer",
+          "priority": "P3",
+          "dependencies": ["T7.2"],
+          "acceptanceCriteria": [
+            "Crack and Joint offset mAP@0.5 improves ≥10%",
+            "Inference latency increase ≤30%",
+            "ONNX export still succeeds"
+          ]
+        },
+        {
+          "id": "T7.4",
+          "title": "FPN/PAN + Task-Aligned Label Assignment (TAL)",
+          "agent": "backend-engineer",
+          "priority": "P3",
+          "dependencies": ["T7.3"],
+          "acceptanceCriteria": [
+            "Overall mAP@0.5:0.95 improves ≥0.05",
+            "Debris and Crack localization quality improves"
+          ]
+        },
+        {
+          "id": "T7.5",
+          "title": "Extended training with new augmentation combo",
+          "agent": "backend-engineer",
+          "priority": "P3",
+          "dependencies": ["T7.4"],
+          "acceptanceCriteria": [
+            "Train to convergence (no val loss improvement for 50 epochs)",
+            "Final mAP@0.5 ≥0.55 (vs current 0.44)"
+          ]
+        },
+        {
+          "id": "T7.6",
+          "title": "Faster R-CNN baseline comparison",
+          "agent": "backend-engineer",
+          "priority": "P3",
+          "dependencies": ["T7.5"],
+          "acceptanceCriteria": [
+            "Faster R-CNN trained on same dataset/split",
+            "Comparison report: mAP, latency, model size",
+            "Conclusion documented in /models page"
+          ]
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalSprints": 7,
+    "totalTasks": 53,
+    "criticalPath": ["T1.1", "T1.2", "T1.3", "T1.5", "T3.1", "T3.5", "T3.15"],
+    "biggestRisk": "R1: YOLO26m ONNX export failure (mitigated by T2.1 HF Spaces fallback ready by Sprint 2)"
+  }
+}
