@@ -1,0 +1,33 @@
+model:
+  name: yolo26m-pipevision-fp16
+  format: onnx
+  input_shape: [1, 3, 640, 640]
+  precision: fp16
+  opset: 17
+  size_mb: 44
+  # TODO: populate source_pt_md5 after running:
+  #   md5sum model/artifacts/best.pt
+  # Used by the frontend Service Worker for cache invalidation.
+  source_pt_md5: ""
+
+classes:
+  - { id: 0, name: Buckling,          severity: high }
+  - { id: 1, name: Crack,             severity: medium }
+  - { id: 2, name: Debris,            severity: low }
+  - { id: 3, name: Hole,              severity: critical }
+  - { id: 4, name: Joint offset,      severity: medium }
+  - { id: 5, name: Obstacle,          severity: high }
+  - { id: 6, name: Utility intrusion, severity: high }
+
+inference:
+  conf_threshold: 0.25
+  iou_threshold: 0.45
+  max_detections: 100
+
+metrics:
+  test:
+    mAP_0_5: 0.44
+    mAP_0_5_0_95: 0.198
+  validation:
+    mAP_0_5: 0.439
+    mAP_0_5_0_95: 0.198

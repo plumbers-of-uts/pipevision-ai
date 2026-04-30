@@ -1,0 +1,19 @@
+[tools]
+python = "3.11"
+uv = "latest"
+
+[tasks."model:download"]
+description = "Download best.pt from SageMaker S3 (requires SAGEMAKER_MODEL_S3_URI env var)"
+run = "bash model/download.sh"
+
+[tasks."model:export"]
+description = "Export best.pt to ONNX FP16 with optional ORT graph optimization"
+run = "uv run --project model python model/export.py"
+
+[tasks."model:verify"]
+description = "Regression test: compare PT vs ONNX mAP@0.5, assert |delta| < 0.005 (requires VAL_DATASET_YAML)"
+run = "uv run --project model python model/verify.py"
+
+[tasks."model:upload"]
+description = "Push ONNX model, metadata.yaml, and README.md to Hugging Face Hub (requires HF_USER env var)"
+run = "bash model/upload.sh"

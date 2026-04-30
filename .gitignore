@@ -1,2 +1,12 @@
 .DS_Store
 **/.DS_Store
+
+# Sprint 1 — model artifacts
+model/artifacts/
+model/.venv/
+*.onnx
+*.pt
+*.tar.gz
+__pycache__/
+*.pyc
+/.python-version
