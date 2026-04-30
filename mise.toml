@@ -17,3 +17,27 @@ run = "uv run --project model python model/verify.py"
 [tasks."model:upload"]
 description = "Push ONNX model, metadata.yaml, and README.md to Hugging Face Hub (requires HF_USER env var)"
 run = "bash model/upload.sh"
+
+[tasks.dev]
+description = "Run Vite dev server"
+run = "bun run dev"
+
+[tasks.build]
+description = "Type-check and build production bundle"
+run = "bun run build"
+
+[tasks.lint]
+description = "Lint with Biome"
+run = "bun run lint"
+
+[tasks.format]
+description = "Format with Biome"
+run = "bun run format"
+
+[tasks.typecheck]
+description = "Type-check without emit"
+run = "bun run typecheck"
+
+[tasks.test]
+description = "Run tests (placeholder until Sprint 3)"
+run = "bun run test"

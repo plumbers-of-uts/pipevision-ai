@@ -10,3 +10,17 @@ model/.venv/
 __pycache__/
 *.pyc
 /.python-version
+
+# Sprint 2 — frontend build artifacts
+node_modules/
+dist/
+.vite/
+*.log
+*.local
+
+# bun lockfile is committed; ignore bun cache
+.bun/
+
+# Editor
+.vscode/settings.json
+.idea/

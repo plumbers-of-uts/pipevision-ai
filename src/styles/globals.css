@@ -1,0 +1,203 @@
+/* Tailwind CSS v4 — CSS-first configuration */
+@import "tailwindcss";
+
+/* ============================================================
+   DESIGN.md Appendix B — Tailwind v4 @theme (oklch tokens)
+   All semantic color tokens from DESIGN.md §1.2 are mapped here.
+   This is the single source of truth; do NOT duplicate in JS.
+   ============================================================ */
+@theme {
+  /* Background Scale (Neutral) */
+  --color-bg-base: oklch(1.0 0 0);
+  --color-bg-surface: oklch(0.97 0.003 280);
+  --color-bg-elevated: oklch(0.94 0.003 280);
+  --color-bg-overlay: oklch(0.91 0.003 280);
+
+  /* Foreground (Text) */
+  --color-fg-primary: oklch(0.18 0.015 250);
+  --color-fg-secondary: oklch(0.5 0.01 250);
+  --color-fg-tertiary: oklch(0.68 0.008 250);
+  --color-fg-inverse: oklch(1.0 0 0);
+
+  /* Accent — Orange/Amber (Primary Action) */
+  --color-accent: oklch(0.72 0.18 55);
+  --color-accent-hover: oklch(0.64 0.18 55);
+  --color-accent-muted: oklch(0.96 0.04 55);
+  --color-accent-text: oklch(0.52 0.14 55);
+
+  /* Severity Scale */
+  --color-severity-critical: oklch(0.5 0.22 25);
+  --color-severity-high: oklch(0.56 0.2 40);
+  --color-severity-medium: oklch(0.62 0.16 80);
+  --color-severity-low: oklch(0.56 0.15 160);
+
+  /* Functional Colors */
+  --color-success: oklch(0.56 0.15 155);
+  --color-warning: oklch(0.62 0.16 80);
+  --color-error: oklch(0.5 0.22 25);
+  --color-info: oklch(0.52 0.15 250);
+
+  /* Border */
+  --color-border-default: oklch(0.9 0.005 280);
+  --color-border-hover: oklch(0.82 0.005 280);
+  --color-border-focus: oklch(0.72 0.18 55);
+
+  /* Font families */
+  --font-sans: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, "Courier New",
+    monospace;
+
+  /* Sidebar widths */
+  --sidebar-width-expanded: 240px;
+  --sidebar-width-collapsed: 64px;
+
+  /* Content */
+  --content-max-width: 1280px;
+}
+
+/* ============================================================
+   CSS Custom Properties (DESIGN.md Appendix A — full token set)
+   These are the HSL-based :root vars for direct CSS usage.
+   Tailwind classes use the @theme oklch values above.
+   ============================================================ */
+:root {
+  /* Background */
+  --bg-base: hsl(0 0% 100%);
+  --bg-surface: hsl(240 5% 96%);
+  --bg-elevated: hsl(240 4% 93%);
+  --bg-overlay: hsl(240 3% 90%);
+
+  /* Foreground */
+  --fg-primary: hsl(220 15% 10%);
+  --fg-secondary: hsl(220 8% 45%);
+  --fg-tertiary: hsl(220 6% 62%);
+  --fg-inverse: hsl(0 0% 100%);
+
+  /* Accent */
+  --accent: hsl(28 92% 52%);
+  --accent-hover: hsl(28 92% 45%);
+  --accent-muted: hsl(28 60% 94%);
+  --accent-text: hsl(28 92% 35%);
+
+  /* Severity */
+  --severity-critical: hsl(0 72% 45%);
+  --severity-high: hsl(20 85% 46%);
+  --severity-medium: hsl(40 90% 38%);
+  --severity-low: hsl(160 55% 38%);
+
+  /* Functional */
+  --success: hsl(142 60% 38%);
+  --warning: hsl(40 90% 38%);
+  --error: hsl(0 72% 45%);
+  --info: hsl(210 70% 45%);
+
+  /* Border */
+  --border-default: hsl(240 5% 88%);
+  --border-hover: hsl(240 4% 78%);
+  --border-focus: hsl(28 92% 52%);
+
+  /* Typography */
+  --font-sans: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, "Courier New",
+    monospace;
+
+  /* Spacing */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+  --sp-16: 4rem;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* Sidebar */
+  --sidebar-width-expanded: 240px;
+  --sidebar-width-collapsed: 64px;
+
+  /* Content */
+  --content-max-width: 1280px;
+}
+
+/* ============================================================
+   Global base styles
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--fg-primary);
+  background-color: var(--bg-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessible focus ring (DESIGN.md §6.1) */
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Skip-to-content link (DESIGN.md §6.1) */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--accent);
+  color: var(--fg-inverse);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius-md) 0;
+  z-index: 9999;
+  transition: top 0.1s ease;
+}
+
+.skip-to-content:focus {
+  top: 0;
+}
+
+/* Reduced motion (DESIGN.md §6.2) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Monospace usage for confidence scores, model labels, etc. */
+.font-mono {
+  font-family: var(--font-mono);
+}

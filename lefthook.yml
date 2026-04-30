@@ -1,0 +1,15 @@
+# Lefthook — lightweight git hooks manager (no Node bootstrap required).
+# See .claude/rules/commit.md for commit message conventions.
+# Hooks run on pre-commit (lint staged) and commit-msg (commitlint).
+
+pre-commit:
+  parallel: true
+  commands:
+    biome-check:
+      glob: "*.{ts,tsx,js,jsx,json}"
+      run: bunx biome check --no-errors-on-unmatched {staged_files}
+
+commit-msg:
+  commands:
+    commitlint:
+      run: bunx commitlint --edit {1}

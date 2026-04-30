@@ -1,0 +1,76 @@
+# GitHub Pages deploy workflow for PipeVision AI.
+#
+# Prerequisites (one-time repo setup):
+#   Settings > Pages > Source: "GitHub Actions"
+#
+# This workflow:
+#   1. Checks out code
+#   2. Sets up bun runtime
+#   3. Installs dependencies
+#   4. Type-checks (tsc --noEmit)
+#   5. Lints (biome check)
+#   6. Builds (vite build → dist/)
+#   7. Uploads dist/ as Pages artifact
+#   8. Deploys to https://<user>.github.io/pipevision-ai/
+#
+# Concurrency: only one deploy runs at a time; in-progress deploy is
+# cancelled if a newer push arrives.
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Allow manual trigger from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type check
+        run: bun run typecheck
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Build
+        run: bun run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
