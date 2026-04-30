@@ -3,6 +3,7 @@ import { HashRouter, useRoutes } from "react-router-dom";
 import { AppSidebar } from "@/widgets/app-sidebar";
 
 import { ModelProvider } from "./providers/model-provider";
+import { SeedProvider } from "./providers/seed-provider";
 import { ThemeProvider } from "./providers/theme-provider";
 import { routes } from "./routes";
 
@@ -26,21 +27,23 @@ export function App() {
   return (
     <ThemeProvider>
       <ModelProvider>
-        <HashRouter>
-          {/* Skip-to-content link for keyboard/screen-reader users (DESIGN.md §6.1) */}
-          <a href="#main-content" className="skip-to-content">
-            Skip to main content
-          </a>
+        <SeedProvider>
+          <HashRouter>
+            {/* Skip-to-content link for keyboard/screen-reader users (DESIGN.md §6.1) */}
+            <a href="#main-content" className="skip-to-content">
+              Skip to main content
+            </a>
 
-          <div className="flex min-h-screen bg-bg-base">
-            <AppSidebar />
+            <div className="flex min-h-screen bg-bg-base">
+              <AppSidebar />
 
-            {/* Main content — grows to fill remaining space */}
-            <div className="flex min-w-0 flex-1 flex-col overflow-auto">
-              <AppRoutes />
+              {/* Main content — grows to fill remaining space */}
+              <div className="flex min-w-0 flex-1 flex-col overflow-auto">
+                <AppRoutes />
+              </div>
             </div>
-          </div>
-        </HashRouter>
+          </HashRouter>
+        </SeedProvider>
       </ModelProvider>
     </ThemeProvider>
   );

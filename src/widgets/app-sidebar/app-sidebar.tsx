@@ -74,9 +74,16 @@ export function AppSidebar() {
         </ul>
       </nav>
 
-      {/* Bottom slot — reserved for model-status-pill (Sprint 3, T3.7) */}
-      <div className="border-t border-border-default px-3 py-4" data-testid="sidebar-bottom-slot">
-        {/* model-status-pill will be rendered here in Sprint 3 */}
+      {/* Bottom slot — model-status-pill placeholder (Sprint 3, T3.7 will replace this) */}
+      {/* TODO (Sprint 3): Replace static pill with live ModelProvider state from model-provider.tsx */}
+      <div className="border-t border-border-default px-4 py-3.5" data-testid="sidebar-bottom-slot">
+        <div className="flex items-center gap-2 text-[11px] text-fg-tertiary">
+          <span
+            className="inline-block size-[7px] shrink-0 rounded-full bg-success shadow-[0_0_6px_currentColor] text-success"
+            aria-hidden="true"
+          />
+          <span>Model: Demo Mode</span>
+        </div>
       </div>
     </aside>
   );

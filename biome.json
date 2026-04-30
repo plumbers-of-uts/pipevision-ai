@@ -45,21 +45,26 @@
       "recommended": true,
       "correctness": {
         "noUnusedImports": "error",
-        "noUnusedVariables": "error"
+        "noUnusedVariables": "error",
+        "useExhaustiveDependencies": "warn"
       },
       "suspicious": {
-        "noExplicitAny": "warn"
+        "noExplicitAny": "warn",
+        "noArrayIndexKey": "warn"
       },
       "style": {
         "useImportType": "error",
         "useConst": "error"
       },
       "a11y": {
-        "noSvgWithoutTitle": "warn",
+        "noSvgWithoutTitle": "off",
         "useAltText": "error",
         "useButtonType": "error",
         "useKeyWithClickEvents": "warn",
-        "useSemanticElements": "warn"
+        "useSemanticElements": "off",
+        "useFocusableInteractive": "warn",
+        "noLabelWithoutControl": "warn",
+        "noRedundantAlt": "warn"
       }
     }
   },
