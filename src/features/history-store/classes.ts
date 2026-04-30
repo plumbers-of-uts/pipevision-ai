@@ -23,13 +23,13 @@ export interface ClassMeta {
 }
 
 export const PIPEVISION_CLASSES = [
-  { id: 0, name: "Buckling", severity: "high" as const, color: "hsl(20 85% 46%)" },
-  { id: 1, name: "Crack", severity: "medium" as const, color: "hsl(40 90% 38%)" },
-  { id: 2, name: "Debris", severity: "low" as const, color: "hsl(160 55% 38%)" },
-  { id: 3, name: "Hole", severity: "critical" as const, color: "hsl(0 72% 45%)" },
-  { id: 4, name: "Joint offset", severity: "medium" as const, color: "hsl(40 90% 38%)" },
-  { id: 5, name: "Obstacle", severity: "high" as const, color: "hsl(20 85% 46%)" },
-  { id: 6, name: "Utility intrusion", severity: "high" as const, color: "hsl(20 85% 46%)" },
+  { id: 0, name: "Buckling", severity: "high" as const, color: "hsl(20, 85%, 46%)" },
+  { id: 1, name: "Crack", severity: "medium" as const, color: "hsl(40, 90%, 38%)" },
+  { id: 2, name: "Debris", severity: "low" as const, color: "hsl(160, 55%, 38%)" },
+  { id: 3, name: "Hole", severity: "critical" as const, color: "hsl(0, 72%, 45%)" },
+  { id: 4, name: "Joint offset", severity: "medium" as const, color: "hsl(40, 90%, 38%)" },
+  { id: 5, name: "Obstacle", severity: "high" as const, color: "hsl(20, 85%, 46%)" },
+  { id: 6, name: "Utility intrusion", severity: "high" as const, color: "hsl(20, 85%, 46%)" },
 ] as const satisfies readonly ClassMeta[];
 
 /** Total number of classes (7). */

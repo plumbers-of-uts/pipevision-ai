@@ -11,6 +11,7 @@
 
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import {
   CartesianGrid,
   Label,
@@ -18,7 +19,6 @@ import {
   Line,
   LineChart,
   ReferenceLine,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -96,18 +96,36 @@ function CustomTooltip({
 }
 
 export function TrainingCurveChart() {
+  // See per-class-chart.tsx for why we avoid ResponsiveContainer here.
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(900);
+
+  useEffect(() => {
+    const measure = () => {
+      if (containerRef.current) setWidth(containerRef.current.clientWidth);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
   return (
-    <div>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={CURVE_DATA} margin={{ top: 8, right: 16, bottom: 24, left: 8 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.9 0.005 280)" />
+    <div ref={containerRef}>
+      <div className="overflow-hidden">
+        <LineChart
+          width={width}
+          height={300}
+          data={CURVE_DATA}
+          margin={{ top: 8, right: 16, bottom: 24, left: 8 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(240, 5%, 88%)" />
 
           <XAxis
             dataKey="epoch"
             type="number"
             domain={[0, 100]}
             tickCount={11}
-            tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "oklch(0.68 0.008 250)" }}
+            tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "hsl(220, 8%, 45%)" }}
             axisLine={false}
             tickLine={false}
           >
@@ -115,7 +133,7 @@ export function TrainingCurveChart() {
               value="Epoch"
               position="insideBottomRight"
               offset={-4}
-              style={{ fontSize: 11, fill: "oklch(0.68 0.008 250)" }}
+              style={{ fontSize: 11, fill: "hsl(220, 8%, 45%)" }}
             />
           </XAxis>
 
@@ -125,7 +143,7 @@ export function TrainingCurveChart() {
             domain={[0.5, 4]}
             tickCount={8}
             tickFormatter={(v: number) => v.toFixed(1)}
-            tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "oklch(0.68 0.008 250)" }}
+            tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "hsl(220, 8%, 45%)" }}
             axisLine={false}
             tickLine={false}
             width={36}
@@ -138,7 +156,7 @@ export function TrainingCurveChart() {
             domain={[0, 0.55]}
             tickCount={6}
             tickFormatter={(v: number) => v.toFixed(2)}
-            tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "oklch(0.68 0.008 250)" }}
+            tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "hsl(220, 8%, 45%)" }}
             axisLine={false}
             tickLine={false}
             width={40}
@@ -156,13 +174,13 @@ export function TrainingCurveChart() {
           <ReferenceLine
             yAxisId="loss"
             x={57}
-            stroke="oklch(0.56 0.2 40)"
+            stroke="hsl(0, 72%, 45%)"
             strokeDasharray="4 3"
             strokeWidth={1.5}
             label={{
               value: "Best ckpt (ep 57)",
               position: "insideTopRight",
-              style: { fontSize: 10, fill: "oklch(0.56 0.2 40)", fontFamily: "var(--font-mono)" },
+              style: { fontSize: 10, fill: "hsl(0, 72%, 45%)", fontFamily: "var(--font-mono)" },
             }}
           />
 
@@ -171,7 +189,7 @@ export function TrainingCurveChart() {
             type="monotone"
             dataKey="trainLoss"
             name="Train Loss"
-            stroke="oklch(0.72 0.18 55)"
+            stroke="hsl(28, 92%, 52%)"
             strokeWidth={2}
             dot={false}
             activeDot={{ r: 4 }}
@@ -182,7 +200,7 @@ export function TrainingCurveChart() {
             type="monotone"
             dataKey="valLoss"
             name="Val Loss"
-            stroke="oklch(0.52 0.15 250)"
+            stroke="hsl(210, 70%, 45%)"
             strokeWidth={2}
             strokeDasharray="5 3"
             dot={false}
@@ -194,13 +212,13 @@ export function TrainingCurveChart() {
             type="monotone"
             dataKey="map50"
             name="mAP@0.5"
-            stroke="oklch(0.56 0.15 160)"
+            stroke="hsl(142, 60%, 38%)"
             strokeWidth={2.5}
             dot={false}
             activeDot={{ r: 4 }}
           />
         </LineChart>
-      </ResponsiveContainer>
+      </div>
 
       {/* Summary note */}
       <p className="mt-2 text-center text-[11px] text-fg-tertiary">
