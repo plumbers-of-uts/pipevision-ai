@@ -10,8 +10,6 @@
  *   imgHeight  — original image height (px)
  */
 
-"use client";
-
 import { useEffect, useRef } from "react";
 
 import type { Detection } from "@/features/history-store/types";
@@ -39,8 +37,10 @@ export function DetectionCanvas({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    let cancelled = false;
     const img = new Image();
     img.onload = () => {
+      if (cancelled) return;
       // Match canvas intrinsic size to displayed size for crisp rendering
       const displayW = canvas.offsetWidth;
       const displayH = canvas.offsetHeight;
@@ -97,7 +97,16 @@ export function DetectionCanvas({
         ctx.restore();
       }
     };
+    img.onerror = () => {
+      // Swallow load failures — caller handles the missing-image case visually.
+    };
     img.src = imageUrl;
+
+    return () => {
+      cancelled = true;
+      img.onload = null;
+      img.onerror = null;
+    };
   }, [imageUrl, detections, imgWidth, imgHeight]);
 
   return (

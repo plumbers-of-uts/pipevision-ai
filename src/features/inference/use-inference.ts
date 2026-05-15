@@ -68,40 +68,36 @@ export function useInference(): UseInferenceResult {
   const [lastTotalMs, setLastTotalMs] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
 
-  const run = useCallback(
-    async (input: InferenceInput): Promise<Detection[]> => {
-      if (isRunning) return [];
+  const run = useCallback(async (input: InferenceInput): Promise<Detection[]> => {
+    const session = getActiveSession();
+    const backend = getActiveBackend();
+    if (session === null || backend === null) {
+      throw new Error("Model is not ready. Call ensureReady() before running inference.");
+    }
 
-      const session = getActiveSession();
-      const backend = getActiveBackend();
-      if (session === null || backend === null) {
-        throw new Error("Model is not ready. Call ensureReady() before running inference.");
-      }
+    // Cancel any previous run (e.g. page navigation, double-click).
+    // Done BEFORE the isRunning guard so a new call supersedes the old one.
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-      setIsRunning(true);
-      setLastError(null);
+    setIsRunning(true);
+    setLastError(null);
 
-      // Cancel any previous run (e.g. page navigation)
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-
-      try {
-        const service = await getInferenceService(session, backend);
-        const result = await service.run(input, { signal: controller.signal });
-        setLastTotalMs(result.totalMs);
-        return mapToDetections(result.detections);
-      } catch (err) {
-        const code: ErrorCode = (err as { code?: ErrorCode }).code ?? "RUNTIME";
-        const message = err instanceof Error ? err.message : "Inference failed.";
-        setLastError({ code, message });
-        throw err;
-      } finally {
-        setIsRunning(false);
-      }
-    },
-    [isRunning],
-  );
+    try {
+      const service = await getInferenceService(session, backend);
+      const result = await service.run(input, { signal: controller.signal });
+      setLastTotalMs(result.totalMs);
+      return mapToDetections(result.detections);
+    } catch (err) {
+      const code: ErrorCode = (err as { code?: ErrorCode }).code ?? "RUNTIME";
+      const message = err instanceof Error ? err.message : "Inference failed.";
+      setLastError({ code, message });
+      throw err;
+    } finally {
+      setIsRunning(false);
+    }
+  }, []);
 
   const runWithFallback = useCallback(
     async (
@@ -111,7 +107,9 @@ export function useInference(): UseInferenceResult {
       try {
         const detections = await run(input);
         return { detections, source: "local" };
-      } catch {
+      } catch (err) {
+        // Do not fall back on user-initiated cancellation (page navigation, double-click).
+        if (err instanceof DOMException && err.name === "AbortError") throw err;
         // Attempt Spaces fallback (only if URL is configured)
         const spacesDetections = await runSpacesFallback(imageDataUrl);
         return { detections: spacesDetections, source: "spaces" };

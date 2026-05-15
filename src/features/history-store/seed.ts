@@ -180,8 +180,8 @@ function generateDetections(primaryClassId: number, rand: () => number): Detecti
  * Used to embed literal hex values inside SVG attributes.
  */
 function hslToHex(hsl: string): string {
-  // Parse "hsl(H S% L%)" — space-separated modern CSS syntax
-  const m = hsl.match(/hsl\(\s*([\d.]+)\s+([\d.]+)%\s+([\d.]+)%\s*\)/);
+  // Parse "hsl(H S% L%)" or "hsl(H, S%, L%)" — accept both modern and legacy CSS syntax
+  const m = hsl.match(/hsl\(\s*([\d.]+)\s*[,\s]\s*([\d.]+)%\s*[,\s]\s*([\d.]+)%\s*\)/);
   if (!m) return "#888888";
 
   const h = Number(m[1]) / 360;

@@ -14,13 +14,11 @@
  * Matches gui-mockup.html #page-detect (lines 926-1176).
  */
 
-"use client";
-
 import { useBoolean } from "ahooks";
 import { AlertTriangle, ArrowLeft, CheckSquare, Cpu, Info, Play, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { useModelContext, useModelStatus } from "@/app/providers/model-provider";
+import { getActiveSession, useModelContext, useModelStatus } from "@/app/providers/model-provider";
 import { Button } from "@/components/ui/button";
 import { PIPEVISION_CLASSES } from "@/features/history-store/classes";
 import { createRecord } from "@/features/history-store/repository";
@@ -126,6 +124,17 @@ export function DetectPage() {
     void ensureReady();
   }, [ensureReady]);
 
+  // Revoke any outstanding object URL on unmount to avoid blob leaks.
+  useEffect(
+    () => () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+    },
+    [],
+  );
+
   function clearObjectUrl() {
     if (objectUrlRef.current) {
       URL.revokeObjectURL(objectUrlRef.current);
@@ -151,6 +160,7 @@ export function DetectPage() {
 
   async function handleRunDetection() {
     if (!imageUrl) return;
+    if (!selectedFile && !selectedSample) return;
 
     const isLoading =
       modelStatus.phase === "fetching" ||
@@ -162,7 +172,9 @@ export function DetectPage() {
       await ensureReady();
     }
 
-    if (modelStatus.phase === "error") {
+    // Check the live session ref instead of the stale modelStatus closure
+    // captured at render time — ensureReady() may have transitioned to error.
+    if (getActiveSession() === null) {
       setPageState("error");
       return;
     }
@@ -184,9 +196,8 @@ export function DetectPage() {
         thumbUrl = selectedSample.dataUrl;
         imageDataUrl = selectedSample.dataUrl;
       } else {
-        sourceBlob = dataUrlToBlob(imageUrl);
-        thumbUrl = imageUrl;
-        imageDataUrl = imageUrl;
+        // Unreachable: guarded by the early return above.
+        return;
       }
 
       // Decode to get actual image dimensions (used by DetectionCanvas for scaling)
@@ -227,6 +238,7 @@ export function DetectPage() {
 
   async function handleSpacesFallback() {
     if (!imageUrl) return;
+    if (!selectedFile && !selectedSample) return;
     startSpaces();
     setSpacesError(null);
 
@@ -244,9 +256,8 @@ export function DetectPage() {
         thumbUrl = selectedSample.dataUrl;
         sourceBlob = dataUrlToBlob(selectedSample.dataUrl);
       } else {
-        imageDataUrl = imageUrl;
-        thumbUrl = imageUrl;
-        sourceBlob = dataUrlToBlob(imageUrl);
+        // Unreachable: guarded by the early return above.
+        return;
       }
 
       const dets = await runSpacesFallback(imageDataUrl);

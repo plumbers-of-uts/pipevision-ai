@@ -9,12 +9,11 @@
  * Detection Accuracy is static "44.0%" — honest PDF benchmark mAP@0.5 (design constraint D9).
  */
 
-"use client";
-
 import { useRequest } from "ahooks";
 import { Images, Target, Timer, TriangleAlert, Wrench } from "lucide-react";
 
 import { useModelStatus } from "@/app/providers/model-provider";
+import { useDemoSeed } from "@/app/providers/seed-provider";
 import { aggregateStats } from "@/features/history-store/repository";
 import { DefectDistributionChart } from "@/widgets/defect-distribution-chart";
 import { RecentDetections } from "@/widgets/recent-detections";
@@ -41,7 +40,9 @@ function inferenceLabel(phase: string): string {
 export function DashboardPage() {
   // Subscribe-only: never call ensureReady() from Dashboard (D-G decision)
   const modelStatus = useModelStatus();
-  const { data: stats } = useRequest(aggregateStats);
+  // Refetch once the demo seed finishes so the stats reflect newly inserted rows.
+  const { status: seedStatus } = useDemoSeed();
+  const { data: stats } = useRequest(aggregateStats, { refreshDeps: [seedStatus] });
 
   const totalInspections = stats?.totalInspections ?? 0;
   const defectsFound = stats?.defectsFound ?? 0;

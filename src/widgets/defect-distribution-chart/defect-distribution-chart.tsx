@@ -4,10 +4,9 @@
  * Matches gui-mockup.html .bar-chart layout (label | bar track | count).
  */
 
-"use client";
-
 import { useRequest } from "ahooks";
 
+import { useDemoSeed } from "@/app/providers/seed-provider";
 import { PIPEVISION_CLASSES } from "@/features/history-store/classes";
 import { aggregateByClass } from "@/features/history-store/repository";
 
@@ -35,8 +34,11 @@ async function fetchChartRows(): Promise<ChartRow[]> {
   })).sort((a, b) => b.count - a.count);
 }
 
-export function DefectDistributionChart(_props: DefectDistributionChartProps = {}) {
-  const { data: rows = [], loading } = useRequest(fetchChartRows);
+export function DefectDistributionChart({ refreshKey }: DefectDistributionChartProps = {}) {
+  const { status: seedStatus } = useDemoSeed();
+  const { data: rows = [], loading } = useRequest(fetchChartRows, {
+    refreshDeps: [seedStatus, refreshKey],
+  });
 
   const maxCount = rows.reduce((m, r) => Math.max(m, r.count), 1);
 

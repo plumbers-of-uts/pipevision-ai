@@ -4,10 +4,9 @@
  * Matches gui-mockup.html .detections-grid and .det-thumb structure.
  */
 
-"use client";
-
 import { useRequest } from "ahooks";
 
+import { useDemoSeed } from "@/app/providers/seed-provider";
 import { recent } from "@/features/history-store/repository";
 import type { HistoryRecord } from "@/features/history-store/types";
 import { relativeTime } from "@/lib/relative-time";
@@ -38,8 +37,11 @@ interface RecentDetectionsProps {
   refreshKey?: number;
 }
 
-export function RecentDetections(_props: RecentDetectionsProps = {}) {
-  const { data: records = [], loading } = useRequest(() => recent(6));
+export function RecentDetections({ refreshKey }: RecentDetectionsProps = {}) {
+  const { status: seedStatus } = useDemoSeed();
+  const { data: records = [], loading } = useRequest(() => recent(6), {
+    refreshDeps: [seedStatus, refreshKey],
+  });
 
   if (loading) {
     return (
