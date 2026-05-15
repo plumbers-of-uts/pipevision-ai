@@ -24,3 +24,6 @@ dist/
 # Editor
 .vscode/settings.json
 .idea/
+
+# oma runtime state
+.agents/state/
