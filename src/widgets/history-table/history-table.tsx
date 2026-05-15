@@ -6,8 +6,6 @@
  * Actions: view detail (Dialog), delete (deleteById).
  */
 
-"use client";
-
 import { ChevronLeft, ChevronRight, Eye, Trash2 } from "lucide-react";
 import { useState } from "react";
 

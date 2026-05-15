@@ -9,8 +9,6 @@
  * Best checkpoint at epoch 57 marked with a ReferenceLine.
  */
 
-"use client";
-
 import { useEffect, useRef, useState } from "react";
 import {
   CartesianGrid,

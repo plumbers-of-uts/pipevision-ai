@@ -4,8 +4,6 @@
  * Uses PDF test set numbers. Honest mAP@0.5 = 0.44 overall.
  */
 
-"use client";
-
 import { useEffect, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Tooltip, XAxis, YAxis } from "recharts";
 

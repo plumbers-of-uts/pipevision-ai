@@ -9,8 +9,6 @@
  *   - Class filter is single-select (UI). Multi-select requires a custom combobox.
  */
 
-"use client";
-
 import { Filter, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";

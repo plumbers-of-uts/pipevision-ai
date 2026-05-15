@@ -12,8 +12,6 @@
  * Matches gui-mockup.html #page-history (lines 1177-1324).
  */
 
-"use client";
-
 import { useBoolean, useRequest } from "ahooks";
 import { useState } from "react";
 

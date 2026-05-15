@@ -4,8 +4,6 @@
  * Matches gui-mockup.html .results-panel + .defect-list + .grade-section.
  */
 
-"use client";
-
 import { CheckCircle2, ListChecks } from "lucide-react";
 
 import type { Detection } from "@/features/history-store/types";

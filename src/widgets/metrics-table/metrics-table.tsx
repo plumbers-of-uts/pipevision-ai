@@ -4,8 +4,6 @@
  * Matches gui-mockup.html model info page design.
  */
 
-"use client";
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 

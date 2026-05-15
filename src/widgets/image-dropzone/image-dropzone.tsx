@@ -5,8 +5,6 @@
  * Calls onFileAccepted with the accepted File object.
  */
 
-"use client";
-
 import { useBoolean } from "ahooks";
 import { CloudUpload } from "lucide-react";
 import { useRef, useState } from "react";
