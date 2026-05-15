@@ -104,7 +104,6 @@ mise run typecheck   # tsc --noEmit
 pipevision-ai/
 ├── docs/
 │   ├── plans/                      # design and execution plans
-│   ├── exec-plans/
 │   └── screenshots/
 ├── model/                          # ONNX export pipeline (Python, uv-managed)
 │   ├── download.sh                 # SageMaker S3 → local
