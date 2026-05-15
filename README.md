@@ -25,9 +25,14 @@ Live at https://plumbers-of-uts.github.io/pipevision-ai/
 
 ## Status
 
-The web app is live with all four pages built and a 50-record IndexedDB demo seed. The Detect page currently uses a stub that fakes inference (1.5 s timeout + random bounding boxes) so the rest of the UI can be exercised end to end.
+Browser inference is fully wired. The Detect page runs real `onnxruntime-web` against an HF Hub–hosted FP16 ONNX model, with a 5-phase loading state machine, Serwist service worker caching, SHA-256 integrity verification, and a manual Hugging Face Spaces fallback button for failure recovery.
 
-The actual inference path — exporting the trained `best.pt` to ONNX FP16, hosting it on Hugging Face Hub, and running it in the browser via `onnxruntime-web` — is scripted in the `model/` workspace but has not been executed yet. Hugging Face credentials and the SageMaker S3 URI are needed to run it.
+To actually run the demo end-to-end, two pieces of configuration are required:
+
+1. `VITE_MODEL_URL` — public URL of the ONNX model on Hugging Face Hub
+2. `VITE_MODEL_SHA256` — SHA-256 hex of the ONNX file (for integrity verification + cache invalidation)
+
+Without those, the app builds and renders the UI but the Detect page surfaces a clear `Model URL is not configured` error rather than silently failing. See [Configuration](#configuration).
 
 ## Test Set Performance
 
@@ -57,8 +62,11 @@ Crack · Joint offset · Utility intrusion · Debris · Obstacle · Buckling · 
 | Styling | Tailwind v4 + shadcn/ui |
 | Local storage | Dexie (IndexedDB), seeded on first launch |
 | Charts | recharts |
-| Inference (planned) | onnxruntime-web with WebGPU and WASM SIMD fallback |
-| Model hosting (planned) | Hugging Face Hub |
+| Inference | onnxruntime-web 1.26 (WebGPU EP → WASM SIMD fallback, single-threaded) |
+| Model hosting | Hugging Face Hub (FP16 ONNX) |
+| Service worker | Serwist (`src/sw.ts`) — precache app shell + cache-first for ONNX + ORT WASM |
+| Fallback | Hugging Face Spaces (Gradio) — manual button, structured JSON detections |
+| Tests | Vitest (`src/features/inference/__tests__/`) |
 | Code hosting | GitHub Pages, deployed via GitHub Actions |
 | Lint, format, hooks | biome + lefthook + commitlint |
 | Task runner | mise |
@@ -74,6 +82,8 @@ git clone git@github.com:plumbers-of-uts/pipevision-ai.git
 cd pipevision-ai
 mise trust
 bun install
+cp .env.example .env.local
+# Edit .env.local with your VITE_MODEL_URL and VITE_MODEL_SHA256 — see Configuration below.
 mise run dev
 ```
 
@@ -86,15 +96,30 @@ mise run build       # type-check + production build
 mise run lint        # biome check
 mise run format      # biome format --write
 mise run typecheck   # tsc --noEmit
+bun run test         # vitest unit tests for postprocess + NMS
 ```
+
+## Configuration
+
+The Detect page expects two environment variables at build time. The build will succeed without them, but the page will display a configuration error until they are set.
+
+| Variable | Required | Description |
+|---|---|---|
+| `VITE_MODEL_URL` | yes | Public URL of the ONNX FP16 model on Hugging Face Hub. e.g. `https://huggingface.co/<user>/pipevision-yolo26m/resolve/main/yolo26m-fp16.onnx` |
+| `VITE_MODEL_SHA256` | yes (production) | SHA-256 hex of the ONNX file. Doubles as the Service Worker cache-busting key (`?v=<first 8 hex>`). Leave blank in dev to skip integrity verification. |
+| `VITE_SPACES_URL` | optional | Hugging Face Spaces URL for the Gradio fallback. When blank, the "Try Hugging Face Spaces fallback" button is hidden. |
+
+For local development, copy `.env.example` to `.env.local` and fill in the values. For CI deployment via GitHub Actions, configure the variables as repository **Secrets** (`VITE_MODEL_URL`, `VITE_MODEL_SHA256`) and **Variables** (`VITE_SPACES_URL`) under *Settings → Secrets and variables → Actions*. The `deploy.yml` workflow already wires these into the build step.
 
 ### Detect page demo flow
 
 1. Open `/detect`.
-2. Click a sample image, or drop your own.
-3. Click **Run Detection**.
-4. After ~1.5 s the canvas shows boxes drawn from the stub generator.
-5. The result is saved to IndexedDB and appears on the Dashboard and History pages.
+2. Click a sample image, or drop your own (JPEG / PNG / WebP).
+3. Click **Run Detection**. The model loads on first use (status pill in the sidebar shows progress); subsequent visits hit the Service Worker cache.
+4. Bounding boxes are drawn directly on the original image, with per-defect class, severity, and confidence in the result panel.
+5. Each run is saved to IndexedDB and visible from the Dashboard and History pages. `modelVersion` distinguishes local (`yolo26m-pipevision-fp16`) and Spaces fallback (`yolo26m-pipevision-fp16-spaces`) results.
+
+If the model fetch or inference fails and `VITE_SPACES_URL` is set, the error card offers a one-click Spaces fallback that hits the Gradio API instead — same `Detection[]` shape, different `modelVersion`.
 
 ---
 
@@ -163,21 +188,17 @@ After upload, point the frontend at the model URL via `VITE_MODEL_URL` (or updat
 
 ## What's left
 
-Short-term, blocked on credentials:
+Code-wise the demo is complete. To actually run it you need:
 
-- [ ] Create a Hugging Face account and write token.
-- [ ] Locate the SageMaker `best.pt` S3 URI (AWS Console → SageMaker → Training Jobs → Output).
-- [ ] Run the four `model:*` tasks to publish the ONNX model.
+- [ ] Hugging Face Hub account + write token; run the four `model:*` tasks below to publish the ONNX model.
+- [ ] Set `VITE_MODEL_URL` and `VITE_MODEL_SHA256` (see [Configuration](#configuration)).
+- [ ] (Optional) Deploy the Gradio fallback to Hugging Face Spaces using `spaces/app.py` (spec in `docs/plans/work/001-browser-inference-finalization.md`), then set `VITE_SPACES_URL`.
 
-Once the model is published, the next code changes are:
+Backlog tracked in `docs/plans/work/001-browser-inference-finalization.md` and the QA review at `.agents/results/qa-review-browser-inference-001.md`:
 
-- [ ] Replace the Detect page stub with a real `onnxruntime-web` call (preprocess, inference, NMS in TypeScript, model loading state machine, Service Worker cache).
-- [ ] Push a Gradio server-side fallback to Hugging Face Spaces.
-- [ ] Lighthouse pass for performance and accessibility, code-split `onnxruntime-web` via dynamic import.
-
-Future work (not on the critical path):
-
-- Background model prefetch on the Dashboard route, Web Worker inference, INT8 quantization for mobile, i18n (Korean/English), opt-in anonymous telemetry, video and live-camera support.
+- Playwright E2E (`detect.spec.ts`) — deferred from this sprint.
+- Background model prefetch on the Dashboard route, Web Worker inference (currently D13 deferred), INT8 quantization for mobile, i18n (Korean/English), opt-in anonymous telemetry, video and live-camera support.
+- Reduce bundle: the 26 MB `ort-wasm-simd-threaded.jsep.wasm` shipped by ORT 1.26 cannot currently be excluded without breaking the runtime (`numThreads=1` still requires the threaded build).
 - Six experiments listed in the original write-up to push mAP above 0.44: Mosaic and crop augmentation, class-balanced sampling with Focal Loss, CBAM or Deformable Attention, FPN/PAN with Task-Aligned Label Assignment, extended training to epoch 200, and a Faster R-CNN comparison baseline.
 
 ---

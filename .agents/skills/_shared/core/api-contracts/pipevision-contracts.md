@@ -243,3 +243,71 @@ async function detectViaSpace(imageDataUrl: string, conf = 0.25, iou = 0.45) {
 - C1 (model I/O) shape changes require model re-export and possible postprocess update.
 - C4 (IndexedDB) schema changes require Dexie version bump + migration logic.
 - C5 (ModelStatus) is the only contract with a state-machine constraint — adding phases requires updating all consumers.
+
+---
+
+## Corrigendum (Design 001 — 2026-05-15)
+
+설계 `docs/plans/designs/001-browser-inference-finalization.md` 결의에 따라 일부 계약이 다음과 같이 정정됨. 본문은 보존, 아래가 우선함.
+
+### C1' Model I/O dtype 정정
+- **입출력 텐서 dtype은 `float32`로 가정.** ORT-Web의 WebGPU/WASM EP는 FP16 모델을 로드해도 JS 측 텐서를 float32로 노출하는 것이 일반적. 첫 warming run 시 `outputs[0].type === "float32"`를 검증; 불일치 시 `error { code: UNSUPPORTED }`.
+- **출력 layout 자동 감지**: `[1, 4+nc, N]` (nc-first) 또는 `[1, N, 4+nc]` (nc-last) 모두 수용. 첫 warming run의 `outputs[0].dims`로 결정.
+- **출력 활성화**: 기본 `sigmoid` 적용된 상태로 가정. raw logits이면 `model-config.outputActivation = 'none'`로 토글 (필요 시).
+
+### C2' metadata.yaml 폐기
+- **런타임에서 metadata.yaml을 fetch하지 않음.** TS SSOT(`features/history-store/classes.ts` + `features/inference/model-config.ts`)만 사용.
+- `metadata.yaml`은 `model/` 워크스페이스의 빌드 부속 문서로만 존속.
+
+### C5' ModelStatus 보강
+```typescript
+export type ModelStatus =
+  | { phase: 'idle' }
+  | { phase: 'fetching'; loaded: number; total: number }
+  | { phase: 'compiling' }
+  | { phase: 'warming' }
+  | { phase: 'ready'; source: 'network' | 'cache'; backend: 'webgpu' | 'wasm' }
+  | { phase: 'error'; reason: string; retryable: boolean; code: ErrorCode };
+
+export type ErrorCode =
+  | 'NETWORK' | 'INTEGRITY' | 'UNSUPPORTED' | 'SESSION_CREATE' | 'RUNTIME';
+```
+- `ready.ep` → `ready.backend`로 이름 변경.
+- `error`에 `code` 필드 추가, 문자열 enum (`'network' | 'cors' | …`)은 폐기.
+
+### C6' HF Spaces 응답 스키마 — JSON detections 필요
+**TBD — 합의 필요.** 기존 C6은 Gradio 기본 출력(`data[0] = 이미지 base64`)을 가정. Design 001은 **`Detection[]` 형태로 흡수**를 가정 → Spaces 앱 측에서 JSON detection 응답을 추가해야 함.
+
+후보 결정:
+- **(권장) Spaces 앱 수정**: Gradio predict 함수를 두 출력(`gr.Image` + `gr.JSON`)으로 변경. 응답에서 `data[1]`이 JSON detections.
+- **(차선) 어댑터**: Spaces가 이미지만 돌려주면 클라이언트는 이미지를 표시만 하고, `Detection[]`은 빈 배열 + 결과 패널에 “Spaces fallback (no per-defect data)” 표시. IndexedDB modelVersion='spaces-fallback'.
+
+설계 §9 Open Question #2와 동일. `/work` 진입 전 결정 필요.
+
+기대 응답 (권장안):
+```json
+{
+  "data": [
+    "data:image/png;base64,...",
+    {
+      "detections": [
+        { "class_id": 1, "score": 0.83, "bbox": [120, 80, 180, 140] }
+      ],
+      "inference_ms": 412
+    }
+  ],
+  "duration": 5.42
+}
+```
+
+### C7' 무결성 — SHA-256 (신규)
+- 모델 자산 검증은 **SHA-256** 해시 (MD5 폐기).
+- 환경 변수: `VITE_MODEL_SHA256` (64 hex).
+- 검증: 클라이언트 측 `crypto.subtle.digest('SHA-256', buf)` 후 hex 비교.
+- 불일치 시 캐시 무효화 + 1회 자동 재시도. 재실패 시 `error { code: INTEGRITY }`.
+
+### C8' Service Worker 캐시 정책 (신규)
+- 캐시 키: `pv-model-v1` (SW 코드 변경 시에만 bump)
+- 캐시 무효화: 모델 URL의 `?v=<sha256-short>` 쿼리 사용
+- 호스트 화이트리스트: `self.location.origin`, `https://huggingface.co`만 캐시. 그 외 도메인은 통과.
+- 매칭 패턴: `/\.onnx(\?|$)/`, `/ort-wasm.*\.wasm(\?|$)/`
