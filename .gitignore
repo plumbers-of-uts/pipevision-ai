@@ -18,6 +18,11 @@ dist/
 *.log
 *.local
 
+# Environment files (.env.example is the only one committed)
+.env
+.env.*
+!.env.example
+
 # bun lockfile is committed; ignore bun cache
 .bun/
 

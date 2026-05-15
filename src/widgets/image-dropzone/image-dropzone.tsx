@@ -7,6 +7,7 @@
 
 "use client";
 
+import { useBoolean } from "ahooks";
 import { CloudUpload } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -20,7 +21,7 @@ interface ImageDropzoneProps {
 }
 
 export function ImageDropzone({ onFileAccepted }: ImageDropzoneProps) {
-  const [dragging, setDragging] = useState(false);
+  const [dragging, { setTrue: startDragging, setFalse: stopDragging }] = useBoolean(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -49,17 +50,17 @@ export function ImageDropzone({ onFileAccepted }: ImageDropzoneProps) {
 
   function onDragOver(e: React.DragEvent) {
     e.preventDefault();
-    setDragging(true);
+    startDragging();
   }
 
   function onDragLeave(e: React.DragEvent) {
     e.preventDefault();
-    setDragging(false);
+    stopDragging();
   }
 
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
-    setDragging(false);
+    stopDragging();
     const file = e.dataTransfer.files[0];
     if (file) handleFile(file);
   }

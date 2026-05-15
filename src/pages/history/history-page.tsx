@@ -14,7 +14,8 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useBoolean, useRequest } from "ahooks";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +29,7 @@ import {
 import { exportToCsv } from "@/features/export/csv-exporter";
 import { list } from "@/features/history-store/repository";
 import { reseedDemo } from "@/features/history-store/seed";
-import type { HistoryRecord, Severity } from "@/features/history-store/types";
+import type { Severity } from "@/features/history-store/types";
 import { HistoryFilterBar } from "@/widgets/history-filter-bar";
 import type { HistoryFilters } from "@/widgets/history-filter-bar";
 import { HistoryTable } from "@/widgets/history-table";
@@ -47,55 +48,47 @@ function defaultFilters(): HistoryFilters {
 
 export function HistoryPage() {
   const [filters, setFilters] = useState<HistoryFilters>(defaultFilters);
-  const [records, setRecords] = useState<HistoryRecord[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [resetDialogOpen, setResetDialogOpen] = useState(false);
-  const [resetting, setResetting] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [resetDialogOpen, { setTrue: openResetDialog, setFalse: closeResetDialog }] =
+    useBoolean(false);
+  const [resetting, { setTrue: startReset, setFalse: endReset }] = useBoolean(false);
 
-  // Fetch from IndexedDB whenever filters, page, or refreshKey change
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
+  // useRequest re-runs whenever filters or page change. refresh() forces a re-fetch.
+  const {
+    data,
+    loading,
+    refresh: refreshRecords,
+  } = useRequest(
+    async () => {
+      const fromMs = filters.from ? new Date(filters.from).getTime() : undefined;
+      const toMs = filters.to ? new Date(`${filters.to}T23:59:59`).getTime() : undefined;
+      const classFilter = filters.classFilter !== "" ? [Number(filters.classFilter)] : undefined;
+      const severityFilter =
+        filters.severityFilter !== "" ? [filters.severityFilter as Severity] : undefined;
 
-    const fromMs = filters.from ? new Date(filters.from).getTime() : undefined;
-    const toMs = filters.to ? new Date(`${filters.to}T23:59:59`).getTime() : undefined;
-    const classFilter = filters.classFilter !== "" ? [Number(filters.classFilter)] : undefined;
-    const severityFilter =
-      filters.severityFilter !== "" ? [filters.severityFilter as Severity] : undefined;
-
-    list({
-      page,
-      pageSize: PAGE_SIZE,
-      classFilter,
-      severityFilter,
-      from: fromMs,
-      to: toMs,
-    })
-      .then(({ items, total: t }) => {
-        if (cancelled) return;
-        // Client-side text search on visible page only (known limitation: not full-text across all pages)
-        const searched = filters.search.trim()
-          ? items.filter(
-              (r) =>
-                r.id.toLowerCase().includes(filters.search.toLowerCase()) ||
-                (r.notes ?? "").toLowerCase().includes(filters.search.toLowerCase()),
-            )
-          : items;
-        setRecords(searched);
-        setTotal(t);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) setLoading(false);
+      const { items, total: t } = await list({
+        page,
+        pageSize: PAGE_SIZE,
+        classFilter,
+        severityFilter,
+        from: fromMs,
+        to: toMs,
       });
+      // Client-side text search on visible page only (known limitation: not full-text across all pages)
+      const searched = filters.search.trim()
+        ? items.filter(
+            (r) =>
+              r.id.toLowerCase().includes(filters.search.toLowerCase()) ||
+              (r.notes ?? "").toLowerCase().includes(filters.search.toLowerCase()),
+          )
+        : items;
+      return { items: searched, total: t };
+    },
+    { refreshDeps: [filters, page] },
+  );
 
-    return () => {
-      cancelled = true;
-    };
-  }, [filters, page, refreshKey]);
+  const records = data?.items ?? [];
+  const total = data?.total ?? 0;
 
   function handleFilterChange(next: HistoryFilters) {
     setFilters(next);
@@ -107,7 +100,7 @@ export function HistoryPage() {
   }
 
   function handleDeleted() {
-    setRefreshKey((k) => k + 1);
+    refreshRecords();
   }
 
   async function handleExportCsv() {
@@ -130,13 +123,13 @@ export function HistoryPage() {
   }
 
   async function handleResetDemo() {
-    setResetting(true);
+    startReset();
     await reseedDemo();
-    setResetting(false);
-    setResetDialogOpen(false);
+    endReset();
+    closeResetDialog();
     setFilters(defaultFilters());
     setPage(1);
-    setRefreshKey((k) => k + 1);
+    refreshRecords();
   }
 
   return (
@@ -154,7 +147,7 @@ export function HistoryPage() {
         filters={filters}
         onChange={handleFilterChange}
         onExportCsv={handleExportCsv}
-        onResetDemo={() => setResetDialogOpen(true)}
+        onResetDemo={openResetDialog}
       />
 
       {/* Table (loading skeleton or data) */}
@@ -184,7 +177,7 @@ export function HistoryPage() {
       <Dialog
         open={resetDialogOpen}
         onOpenChange={(open) => {
-          if (!open) setResetDialogOpen(false);
+          if (!open) closeResetDialog();
         }}
       >
         <DialogContent className="max-w-sm bg-bg-surface">
@@ -196,11 +189,7 @@ export function HistoryPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setResetDialogOpen(false)}
-              disabled={resetting}
-            >
+            <Button variant="outline" onClick={closeResetDialog} disabled={resetting}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleResetDemo} disabled={resetting}>

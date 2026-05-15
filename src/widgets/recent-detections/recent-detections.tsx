@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRequest } from "ahooks";
 
 import { recent } from "@/features/history-store/repository";
 import type { HistoryRecord } from "@/features/history-store/types";
@@ -38,27 +38,8 @@ interface RecentDetectionsProps {
   refreshKey?: number;
 }
 
-export function RecentDetections({ refreshKey = 0 }: RecentDetectionsProps) {
-  const [records, setRecords] = useState<HistoryRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    recent(6)
-      .then((data) => {
-        if (!cancelled) {
-          setRecords(data);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
+export function RecentDetections(_props: RecentDetectionsProps = {}) {
+  const { data: records = [], loading } = useRequest(() => recent(6));
 
   if (loading) {
     return (

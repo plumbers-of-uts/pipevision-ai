@@ -39,5 +39,13 @@ description = "Type-check without emit"
 run = "bun run typecheck"
 
 [tasks.test]
-description = "Run tests (placeholder until Sprint 3)"
+description = "Run vitest unit tests for inference modules (nms, postprocess)"
 run = "bun run test"
+
+[tasks."test:watch"]
+description = "Run vitest in watch mode"
+run = "bun run test:watch"
+
+[tasks."test:coverage"]
+description = "Run vitest with v8 coverage report"
+run = "bun run test:coverage"

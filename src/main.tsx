@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { App } from "./app/app";
+import { registerServiceWorker } from "./lib/onnx/sw-register";
 import "./styles/globals.css";
 
 const rootElement = document.getElementById("root");
@@ -16,3 +17,7 @@ createRoot(rootElement).render(
     <App />
   </StrictMode>,
 );
+
+// Register Serwist service worker in production only.
+// Caches ONNX model + ORT WASM cache-first per the C8' contract.
+registerServiceWorker();

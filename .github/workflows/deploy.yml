@@ -57,6 +57,12 @@ jobs:
 
       - name: Build
         run: bun run build
+        env:
+          # Sensitive (Repository → Settings → Secrets and variables → Actions → Secrets)
+          VITE_MODEL_URL: ${{ secrets.VITE_MODEL_URL }}
+          VITE_MODEL_SHA256: ${{ secrets.VITE_MODEL_SHA256 }}
+          # Public Spaces URL (Repository → Variables). Optional — fallback button hides when blank.
+          VITE_SPACES_URL: ${{ vars.VITE_SPACES_URL }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

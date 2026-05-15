@@ -102,8 +102,7 @@ export function DetectionResultPanel({ detections, inferenceMs }: DetectionResul
 
             return (
               <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: list is stable after detection
-                key={`${det.id}-${idx}`}
+                key={det.id}
                 role="listitem"
                 className="rounded border border-border-default bg-bg-elevated p-3 transition-colors hover:bg-bg-overlay"
                 style={{ borderLeft: `3px solid ${det.color}` }}
@@ -127,18 +126,20 @@ export function DetectionResultPanel({ detections, inferenceMs }: DetectionResul
 
                 {/* Confidence bar */}
                 <div className="flex items-center gap-2">
-                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-bg-base">
+                  <div
+                    className="h-1 flex-1 overflow-hidden rounded-full bg-bg-base"
+                    role="progressbar"
+                    aria-valuenow={Math.round(det.confidence * 100)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Confidence ${(det.confidence * 100).toFixed(0)}%`}
+                  >
                     <div
                       className="h-full rounded-full transition-all duration-700"
                       style={{
                         width: `${(det.confidence * 100).toFixed(0)}%`,
                         background: det.color,
                       }}
-                      role="progressbar"
-                      aria-valuenow={Math.round(det.confidence * 100)}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-label={`Confidence ${(det.confidence * 100).toFixed(0)}%`}
                     />
                   </div>
                   <div className="w-9 text-right font-mono text-[11px] text-fg-secondary">

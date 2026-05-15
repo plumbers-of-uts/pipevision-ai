@@ -1,6 +1,9 @@
 import { Cpu, History, LayoutDashboard, ScanSearch } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
+import { useModelStatus } from "@/app/providers/model-provider";
+import { ModelStatusPill } from "@/widgets/model-status-pill";
+
 interface NavItem {
   to: string;
   label: string;
@@ -22,6 +25,8 @@ const NAV_ITEMS: NavItem[] = [
  * Hover state: bg-elevated background.
  */
 export function AppSidebar() {
+  const modelStatus = useModelStatus();
+
   return (
     <aside
       className="flex h-screen w-[240px] shrink-0 flex-col border-r border-border-default bg-bg-surface"
@@ -74,16 +79,9 @@ export function AppSidebar() {
         </ul>
       </nav>
 
-      {/* Bottom slot — model-status-pill placeholder (Sprint 3, T3.7 will replace this) */}
-      {/* TODO (Sprint 3): Replace static pill with live ModelProvider state from model-provider.tsx */}
+      {/* Bottom slot — live model status pill (T11) */}
       <div className="border-t border-border-default px-4 py-3.5" data-testid="sidebar-bottom-slot">
-        <div className="flex items-center gap-2 text-[11px] text-fg-tertiary">
-          <span
-            className="inline-block size-[7px] shrink-0 rounded-full bg-success shadow-[0_0_6px_currentColor] text-success"
-            aria-hidden="true"
-          />
-          <span>Model: Demo Mode</span>
-        </div>
+        <ModelStatusPill status={modelStatus} />
       </div>
     </aside>
   );

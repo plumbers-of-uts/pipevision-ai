@@ -11,22 +11,37 @@
 
 "use client";
 
+import { useRequest } from "ahooks";
 import { Images, Target, Timer, TriangleAlert, Wrench } from "lucide-react";
-import { useEffect, useState } from "react";
 
+import { useModelStatus } from "@/app/providers/model-provider";
 import { aggregateStats } from "@/features/history-store/repository";
-import type { AggregateStats } from "@/features/history-store/types";
 import { DefectDistributionChart } from "@/widgets/defect-distribution-chart";
 import { RecentDetections } from "@/widgets/recent-detections";
 import { StatCard } from "@/widgets/stat-card";
 
-export function DashboardPage() {
-  const [stats, setStats] = useState<AggregateStats | null>(null);
-  const [refreshKey] = useState(0);
+/** Map model phase to a human-readable delta label for the StatCard. */
+function inferenceLabel(phase: string): string {
+  switch (phase) {
+    case "fetching":
+      return "Downloading model…";
+    case "compiling":
+      return "Initializing engine…";
+    case "warming":
+      return "Warming up…";
+    case "ready":
+      return "Browser ONNX inference";
+    case "error":
+      return "Model unavailable";
+    default:
+      return "Browser WASM inference";
+  }
+}
 
-  useEffect(() => {
-    aggregateStats().then(setStats).catch(console.error);
-  }, [refreshKey]);
+export function DashboardPage() {
+  // Subscribe-only: never call ensureReady() from Dashboard (D-G decision)
+  const modelStatus = useModelStatus();
+  const { data: stats } = useRequest(aggregateStats);
 
   const totalInspections = stats?.totalInspections ?? 0;
   const defectsFound = stats?.defectsFound ?? 0;
@@ -38,6 +53,7 @@ export function DashboardPage() {
       : "No data yet";
 
   const avgSeconds = avgMs > 0 ? `${(avgMs / 1000).toFixed(1)}s` : "—";
+  const processingDelta = inferenceLabel(modelStatus.phase);
 
   return (
     <main id="main-content" className="overflow-y-auto p-6">
@@ -87,7 +103,7 @@ export function DashboardPage() {
           icon={Timer}
           value={avgSeconds}
           label="Avg Processing Time"
-          delta="Browser WASM inference"
+          delta={processingDelta}
           deltaDirection="neutral"
           accentColor="oklch(0.52 0.15 250)"
         />
@@ -109,7 +125,7 @@ export function DashboardPage() {
               Recent Detections
             </h2>
           </div>
-          <RecentDetections refreshKey={refreshKey} />
+          <RecentDetections />
         </section>
 
         <section
@@ -122,7 +138,7 @@ export function DashboardPage() {
               Defect Distribution
             </h2>
           </div>
-          <DefectDistributionChart refreshKey={refreshKey} />
+          <DefectDistributionChart />
         </section>
       </div>
     </main>

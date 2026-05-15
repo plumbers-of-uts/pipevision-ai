@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRequest } from "ahooks";
 
 import { PIPEVISION_CLASSES } from "@/features/history-store/classes";
 import { aggregateByClass } from "@/features/history-store/repository";
@@ -23,36 +23,20 @@ interface DefectDistributionChartProps {
   refreshKey?: number;
 }
 
-export function DefectDistributionChart({ refreshKey = 0 }: DefectDistributionChartProps) {
-  const [rows, setRows] = useState<ChartRow[]>([]);
-  const [loading, setLoading] = useState(true);
+async function fetchChartRows(): Promise<ChartRow[]> {
+  const counts = await aggregateByClass();
+  const total = Object.values(counts).reduce((s, v) => s + v, 0) || 1;
+  return PIPEVISION_CLASSES.map((cls) => ({
+    classId: cls.id,
+    name: cls.name,
+    color: cls.color,
+    count: counts[cls.id] ?? 0,
+    percent: Math.round(((counts[cls.id] ?? 0) / total) * 100),
+  })).sort((a, b) => b.count - a.count);
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    aggregateByClass()
-      .then((counts) => {
-        if (cancelled) return;
-        const total = Object.values(counts).reduce((s, v) => s + v, 0) || 1;
-        const built: ChartRow[] = PIPEVISION_CLASSES.map((cls) => ({
-          classId: cls.id,
-          name: cls.name,
-          color: cls.color,
-          count: counts[cls.id] ?? 0,
-          percent: Math.round(((counts[cls.id] ?? 0) / total) * 100),
-        }));
-        // Sort by count descending
-        built.sort((a, b) => b.count - a.count);
-        setRows(built);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
+export function DefectDistributionChart(_props: DefectDistributionChartProps = {}) {
+  const { data: rows = [], loading } = useRequest(fetchChartRows);
 
   const maxCount = rows.reduce((m, r) => Math.max(m, r.count), 1);
 

@@ -173,10 +173,9 @@ export function HistoryTable({
                         <span className="text-[11px] text-success">None</span>
                       ) : (
                         <div className="flex flex-wrap gap-1">
-                          {record.detections.slice(0, 4).map((det, i) => (
+                          {record.detections.slice(0, 4).map((det) => (
                             <span
-                              // biome-ignore lint/suspicious/noArrayIndexKey: stable
-                              key={`${det.id}-${i}`}
+                              key={det.id}
                               className="rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold"
                               style={{
                                 background: `color-mix(in srgb, ${det.color} 15%, transparent)`,
@@ -269,17 +268,15 @@ export function HistoryTable({
 
             {pageNums.map((p, i) =>
               p === "…" ? (
-                // biome-ignore lint/suspicious/noArrayIndexKey: ellipsis spacer
                 <span
-                  key={`ellipsis-${i}`}
+                  key={`ellipsis-after-${pageNums[i - 1] ?? "start"}`}
                   className="flex size-7 items-center justify-center text-[12px] text-fg-tertiary"
                 >
                   …
                 </span>
               ) : (
                 <button
-                  // biome-ignore lint/suspicious/noArrayIndexKey: page buttons are stable
-                  key={`page-${p}-${i}`}
+                  key={`page-${p}`}
                   type="button"
                   onClick={() => onPageChange(p as number)}
                   aria-label={`Page ${p}`}
@@ -359,10 +356,9 @@ export function HistoryTable({
                   Detections
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  {viewRecord.detections.map((det, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: stable
+                  {viewRecord.detections.map((det) => (
                     <div
-                      key={`${det.id}-${i}`}
+                      key={det.id}
                       className="flex items-center justify-between rounded border border-border-default bg-bg-elevated px-3 py-2 text-sm"
                     >
                       <span className="font-medium text-fg-primary">{det.className}</span>
