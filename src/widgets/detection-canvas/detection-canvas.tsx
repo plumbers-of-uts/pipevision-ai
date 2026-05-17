@@ -1,18 +1,27 @@
 /**
- * detection-canvas.tsx — Canvas overlay rendering image + bounding boxes.
- * Draws each detection bbox with rounded corners, class label and confidence.
- * Color sourced from PIPEVISION_CLASSES[classId].color (HSL string).
+ * detection-canvas.tsx — Canvas overlay rendering image + bounding boxes + masks.
+ *
+ * Layer order (back → front):
+ *   1. inspection image stretched to canvas size
+ *   2. semi-transparent instance masks tinted with each detection's class color
+ *      (only drawn when det.maskPng is present)
+ *   3. bbox stroke
+ *   4. label pill
  *
  * Props:
  *   imageUrl   — object URL or data URL of the inspection image
- *   detections — array of Detection from the mock inference result
- *   imgWidth   — original image width (px) used for bbox coordinate scaling
+ *   detections — array of Detection from inference or persisted history
+ *   imgWidth   — original image width (px) used for coordinate scaling
  *   imgHeight  — original image height (px)
+ *   showMasks  — when false, the mask layer is skipped (bbox-only view)
  */
 
 import { useEffect, useRef } from "react";
 
 import type { Detection } from "@/features/history-store/types";
+
+/** Alpha applied to mask fills (0..1) — tuned for legibility over bright images. */
+const MASK_ALPHA = 0.45;
 
 interface DetectionCanvasProps {
   imageUrl: string;
@@ -20,6 +29,7 @@ interface DetectionCanvasProps {
   imgWidth: number;
   imgHeight: number;
   className?: string;
+  showMasks?: boolean;
 }
 
 export function DetectionCanvas({
@@ -28,6 +38,7 @@ export function DetectionCanvas({
   imgWidth,
   imgHeight,
   className,
+  showMasks = true,
 }: DetectionCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -38,23 +49,71 @@ export function DetectionCanvas({
     if (!ctx) return;
 
     let cancelled = false;
+
+    // Pre-load all mask PNGs in parallel — eliminates draw-order flicker.
+    const maskLoads = showMasks
+      ? Promise.all(
+          detections.map(async (det) => {
+            if (!det.maskPng) return null;
+            const maskImg = new Image();
+            return new Promise<HTMLImageElement | null>((resolve) => {
+              maskImg.onload = () => resolve(maskImg);
+              maskImg.onerror = () => resolve(null);
+              maskImg.src = det.maskPng ?? "";
+            });
+          }),
+        )
+      : Promise.resolve<Array<HTMLImageElement | null>>([]);
+
     const img = new Image();
-    img.onload = () => {
+    img.onload = async () => {
       if (cancelled) return;
-      // Match canvas intrinsic size to displayed size for crisp rendering
       const displayW = canvas.offsetWidth;
       const displayH = canvas.offsetHeight;
       canvas.width = displayW * window.devicePixelRatio;
       canvas.height = displayH * window.devicePixelRatio;
       ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-      // Draw image stretched to fill canvas
       ctx.drawImage(img, 0, 0, displayW, displayH);
 
-      // Scale factors from original image coords to display coords
       const scaleX = displayW / imgWidth;
       const scaleY = displayH / imgHeight;
 
+      // Layer 2 — masks (only when showMasks and PNG available).
+      const maskImages = await maskLoads;
+      if (cancelled) return;
+
+      for (let i = 0; i < detections.length; i++) {
+        const det = detections[i];
+        if (det === undefined) continue;
+        const maskImg = maskImages[i];
+        if (!maskImg) continue;
+        const x = det.bbox.x * scaleX;
+        const y = det.bbox.y * scaleY;
+        const w = det.bbox.w * scaleX;
+        const h = det.bbox.h * scaleY;
+
+        // Tint trick:
+        //   1. draw the white mask PNG into an offscreen canvas
+        //   2. set composite mode to "source-in" → fills only mask pixels
+        //   3. fill rect with class color
+        const off = document.createElement("canvas");
+        off.width = Math.max(1, Math.round(w));
+        off.height = Math.max(1, Math.round(h));
+        const offCtx = off.getContext("2d");
+        if (offCtx === null) continue;
+        offCtx.drawImage(maskImg, 0, 0, off.width, off.height);
+        offCtx.globalCompositeOperation = "source-in";
+        offCtx.fillStyle = det.color;
+        offCtx.fillRect(0, 0, off.width, off.height);
+
+        ctx.save();
+        ctx.globalAlpha = MASK_ALPHA;
+        ctx.drawImage(off, x, y, w, h);
+        ctx.restore();
+      }
+
+      // Layer 3 + 4 — bbox + label, same as before.
       for (const det of detections) {
         const x = det.bbox.x * scaleX;
         const y = det.bbox.y * scaleY;
@@ -107,7 +166,7 @@ export function DetectionCanvas({
       img.onload = null;
       img.onerror = null;
     };
-  }, [imageUrl, detections, imgWidth, imgHeight]);
+  }, [imageUrl, detections, imgWidth, imgHeight, showMasks]);
 
   return (
     <canvas
