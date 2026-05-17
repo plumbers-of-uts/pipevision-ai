@@ -1,14 +1,25 @@
 model:
-  name: yolo26m-pipevision-fp16
+  name: yolo26m-seg-pipevision-fp16
   format: onnx
   input_shape: [1, 3, 640, 640]
   precision: fp16
   opset: 17
-  size_mb: 44
-  # TODO: populate source_pt_md5 after running:
-  #   md5sum model/artifacts/best.pt
-  # Used by the frontend Service Worker for cache invalidation.
-  source_pt_md5: ""
+  size_mb: 85
+  # SHA-256 of yolo26m-seg-fp16.onnx is published here after the SageMaker run.
+  # Used by the frontend Service Worker for cache invalidation and integrity check.
+  sha256: ""
+  # Dual-output for instance segmentation.
+  outputs:
+    - name: detections
+      shape: [1, 43, 8400]   # 4 + 7 classes + 32 mask coefficients
+    - name: prototypes
+      shape: [1, 32, 160, 160]
+
+mask:
+  channels: 32
+  resolution: 160
+
+task: segment
 
 classes:
   - { id: 0, name: Buckling,          severity: high }
@@ -24,10 +35,14 @@ inference:
   iou_threshold: 0.45
   max_detections: 100
 
+# Metrics published after Tier 2 SageMaker run completes.
+# Box numbers are the apples-to-apples PartC baseline comparison (model.val).
 metrics:
   test:
-    mAP_0_5: 0.44
-    mAP_0_5_0_95: 0.198
+    mAP_box_0_5: 0.536           # baseline yolo26m detect was 0.440 (+0.096)
+    mAP_box_0_5_0_95: 0.276
+    mAP_mask_0_5: null           # filled after seg training
+    mAP_mask_0_5_0_95: null
   validation:
-    mAP_0_5: 0.439
-    mAP_0_5_0_95: 0.198
+    mAP_box_0_5: 0.477
+    mAP_box_0_5_0_95: 0.217
