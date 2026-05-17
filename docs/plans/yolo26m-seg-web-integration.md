@@ -20,20 +20,22 @@ Both plans MUST agree on this contract; either side can change it only via paire
 
 | Item | Value |
 |---|---|
-| HF model repo | `plumbers-of-uts/pipevision-yolo26m-seg` |
+| HF model repo | `gracefullight/pipevision-yolo26m-seg` |
 | ONNX file name | `yolo26m-seg-fp16.onnx` |
 | Input | `images: float32 [1, 3, 640, 640]`, NCHW, RGB, `0..1`, letterboxed |
-| Output 0 — detections | `float32 [1, 4+7+32, N]` (nc-first layout, N≈8400) |
-|   bytes 0..3 | cx, cy, w, h in normalised 640-space `[0,1]` |
-|   bytes 4..10 | class scores (sigmoid applied) |
-|   bytes 11..42 | 32 mask coefficients (no activation) |
+| Output 0 — detections | `float32 [1, 300, 38]` (post-NMS, fixed max_det=300) |
+|   cols 0..3 | x, y, w, h in original pixel space (letterboxed 640 grid) |
+|   col 4 | confidence (already sigmoided × class prob) |
+|   col 5 | class_id (float, cast to int) |
+|   cols 6..37 | 32 mask coefficients (no activation) |
 | Output 1 — prototypes | `float32 [1, 32, 160, 160]` |
-| Mask decode | `mask = sigmoid(prototypes.T @ coefficients).reshape(160, 160)` → threshold 0.5 → crop to bbox → resize to original |
+| Mask decode | `mask = sigmoid(coefficients @ prototypes.reshape(32, 25600)).reshape(160, 160)` → threshold 0.5 → crop to bbox → resize to original |
 | Class IDs | 0 Buckling, 1 Crack, 2 Debris, 3 Hole, 4 Joint offset, 5 Obstacle, 6 Utility intrusion |
-| Inference defaults | conf=0.25, iou=0.45, max_det=100 |
-| NMS | not embedded — done in TS client |
+| Inference defaults | conf=0.25, iou=0.45 (NMS embedded) |
+| NMS | **embedded** in ONNX graph — TS client only filters by conf and unpads zero-rows |
 | Opset | 17 |
-| SHA-256 | published in metadata.yaml after upload |
+| Precision | FP16 weights, FP32 I/O |
+| SHA-256 | `3015a5cca1cce704912aebc01c24d2287af4e07514f279cf81c6cbcc63b4b922` |
 
 If any contract field changes, **bump the HF file name** (`-v2`) and update both plans.
 
@@ -225,15 +227,15 @@ Acceptance:
 
 1. Update `.env.example`:
    ```
-   VITE_MODEL_URL=https://huggingface.co/plumbers-of-uts/pipevision-yolo26m-seg/resolve/main/yolo26m-seg-fp16.onnx
-   VITE_MODEL_SHA256=<published by cnn-assignment3 plan Phase 5>
+   VITE_MODEL_URL=https://huggingface.co/gracefullight/pipevision-yolo26m-seg/resolve/main/yolo26m-seg-fp16.onnx
+   VITE_MODEL_SHA256=3015a5cca1cce704912aebc01c24d2287af4e07514f279cf81c6cbcc63b4b922
    VITE_MODEL_TASK=segment
    ```
 
 2. Update `model/metadata.yaml`:
    - `model.name: yolo26m-seg-pipevision-fp16`
    - `model.input_shape: [1, 3, 640, 640]`
-   - `model.outputs: [detections [1,4+nc+32,N], prototypes [1,32,160,160]]`
+   - `model.outputs: [detections [1,300,38] (post-NMS), prototypes [1,32,160,160]]`
    - `mask: { channels: 32, resolution: 160 }`
    - `metrics.test.mAP_box_0_5`, `metrics.test.mAP_mask_0_5`.
 
