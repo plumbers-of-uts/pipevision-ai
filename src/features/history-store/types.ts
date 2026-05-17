@@ -31,6 +31,12 @@ export interface Detection {
   };
   /** resolved HSL color from DESIGN.md severity scale */
   color: string;
+  /**
+   * Optional binary instance mask serialised as a PNG data URL.
+   * Pixel value = 255 inside the defect, 0 outside. Always sized to the bbox.
+   * Absent for legacy records (pre-seg) and for the detect-only task.
+   */
+  maskPng?: string;
 }
 
 // ─── HistoryRecord (contract C4) ────────────────────────────────────────────

@@ -7,6 +7,8 @@
  * C2' decision: metadata.yaml is NOT fetched at runtime. This file is the TS SSOT.
  */
 
+export type ModelTask = "detect" | "segment";
+
 export interface ModelConfig {
   /** Full URL of the ONNX model file (HF Hub resolve URL or local path). */
   readonly modelUrl: string;
@@ -26,11 +28,19 @@ export interface ModelConfig {
   readonly numClasses: 7;
   /** Input tensor spatial size (square) */
   readonly inputSize: 640;
+  /** Task type — "detect" for bbox-only, "segment" for bbox + mask. */
+  readonly modelTask: ModelTask;
+  /** Number of mask coefficient channels per detection. YOLO seg uses 32. */
+  readonly maskChannels: 32;
+  /** Mask prototype resolution (square). YOLO seg uses inputSize / 4. */
+  readonly maskRes: 160;
 }
 
 const rawUrl = (import.meta.env.VITE_MODEL_URL ?? "") as string;
 const sha256 = ((import.meta.env.VITE_MODEL_SHA256 ?? "") as string).toLowerCase();
 const spacesUrl = import.meta.env.VITE_SPACES_URL ?? null;
+const taskEnv = (import.meta.env.VITE_MODEL_TASK ?? "segment") as ModelTask;
+const modelTask: ModelTask = taskEnv === "detect" ? "detect" : "segment";
 
 function appendCacheKey(url: string, hash: string): string {
   if (!url || hash.length < 8) return url;
@@ -50,4 +60,7 @@ export const MODEL_CONFIG: ModelConfig = Object.freeze({
   maxDetections: 100,
   numClasses: 7,
   inputSize: 640,
+  modelTask,
+  maskChannels: 32,
+  maskRes: 160,
 } satisfies ModelConfig);
