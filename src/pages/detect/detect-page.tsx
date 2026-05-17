@@ -32,6 +32,7 @@ import { SAMPLE_CATALOG } from "@/features/samples/catalog";
 import { DetectionCanvas } from "@/widgets/detection-canvas";
 import { DetectionResultPanel } from "@/widgets/detection-result-panel";
 import { ImageDropzone } from "@/widgets/image-dropzone";
+import { ModelLoadingProgress } from "@/widgets/model-loading-progress";
 
 // ─── Upload guidelines ────────────────────────────────────────────────────────
 
@@ -73,21 +74,6 @@ const ERROR_MESSAGES: Record<ErrorCode, string> = {
   SESSION_CREATE: "Couldn't initialize the model. Trying fallback runtime…",
   RUNTIME: "Inference failed on this image.",
 };
-
-// ─── Phase-specific banner text ───────────────────────────────────────────────
-
-function modelPhaseBanner(phase: string): string {
-  switch (phase) {
-    case "fetching":
-      return "Downloading model… (you can select an image now)";
-    case "compiling":
-      return "Initializing inference engine…";
-    case "warming":
-      return "Warming up the model…";
-    default:
-      return "Loading model…";
-  }
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -336,26 +322,9 @@ export function DetectPage() {
         </p>
       </div>
 
-      {/* ── MODEL LOADING BANNER (visible above upload form while model is fetching) ── */}
+      {/* ── MODEL LOADING PROGRESS (visible above upload form while model is fetching/compiling/warming) ── */}
       {isModelLoading && pageState === "upload" && (
-        <div
-          className="mb-4 flex items-center gap-3 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3"
-          role="status"
-          aria-live="polite"
-        >
-          <div
-            className="size-4 shrink-0 animate-spin rounded-full border-2 border-border-default border-t-accent"
-            aria-hidden="true"
-          />
-          <span className="text-[13px] text-fg-secondary">
-            {modelPhaseBanner(modelStatus.phase)}
-            {modelStatus.phase === "fetching" && modelStatus.total > 0 && (
-              <span className="ml-2 font-mono text-[11px] text-fg-tertiary">
-                {Math.round((modelStatus.loaded / modelStatus.total) * 100)}%
-              </span>
-            )}
-          </span>
-        </div>
+        <ModelLoadingProgress status={modelStatus} className="mb-4" />
       )}
 
       {/* ── MODEL ERROR BANNER (visible above upload form when model is in error state) ── */}

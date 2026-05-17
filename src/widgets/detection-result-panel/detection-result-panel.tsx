@@ -102,8 +102,11 @@ export function DetectionResultPanel({ detections, inferenceMs }: DetectionResul
               <div
                 key={det.id}
                 role="listitem"
-                className="rounded border border-border-default bg-bg-elevated p-3 transition-colors hover:bg-bg-overlay"
-                style={{ borderLeft: `3px solid ${det.color}` }}
+                className="fade-slide-in rounded border border-border-default bg-bg-elevated p-3 transition-colors hover:bg-bg-overlay"
+                style={{
+                  borderLeft: `3px solid ${det.color}`,
+                  animationDelay: `${idx * 60}ms`,
+                }}
               >
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <div>
