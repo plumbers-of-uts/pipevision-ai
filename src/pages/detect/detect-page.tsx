@@ -28,11 +28,11 @@ import { sourceToBitmap } from "@/features/inference/preprocess";
 import type { ErrorCode } from "@/features/inference/types";
 import { useInference } from "@/features/inference/use-inference";
 import type { SampleImage } from "@/features/samples/catalog";
-import { SAMPLE_CATALOG } from "@/features/samples/catalog";
 import { DetectionCanvas } from "@/widgets/detection-canvas";
 import { DetectionResultPanel } from "@/widgets/detection-result-panel";
 import { ImageDropzone } from "@/widgets/image-dropzone";
 import { ModelLoadingProgress } from "@/widgets/model-loading-progress";
+import { SampleGallery } from "@/widgets/sample-gallery";
 
 // ─── Upload guidelines ────────────────────────────────────────────────────────
 
@@ -45,16 +45,6 @@ const GUIDELINES = [
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Convert a data URL string to a Blob. */
-function dataUrlToBlob(dataUrl: string): Blob {
-  const [header, base64] = dataUrl.split(",");
-  const mime = header?.match(/:(.*?);/)?.[1] ?? "image/svg+xml";
-  const binary = atob(base64 ?? "");
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new Blob([bytes], { type: mime });
-}
-
 /** Convert a File or Blob to a base64 data URL. */
 async function toDataUrl(source: File | Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -63,6 +53,13 @@ async function toDataUrl(source: File | Blob): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(source);
   });
+}
+
+/** Fetch a same-origin sample image and return its Blob. */
+async function fetchSampleBlob(src: string): Promise<Blob> {
+  const res = await fetch(src);
+  if (!res.ok) throw new Error(`Failed to load sample ${src}: ${res.status}`);
+  return res.blob();
 }
 
 // ─── Error display messages ───────────────────────────────────────────────────
@@ -141,7 +138,7 @@ export function DetectPage() {
     clearObjectUrl();
     setSelectedSample(sample);
     setSelectedFile(null);
-    setImageUrl(sample.dataUrl);
+    setImageUrl(sample.src);
   }
 
   async function handleRunDetection() {
@@ -178,9 +175,9 @@ export function DetectPage() {
         thumbUrl = imageUrl;
         imageDataUrl = await toDataUrl(selectedFile);
       } else if (selectedSample) {
-        sourceBlob = dataUrlToBlob(selectedSample.dataUrl);
-        thumbUrl = selectedSample.dataUrl;
-        imageDataUrl = selectedSample.dataUrl;
+        sourceBlob = await fetchSampleBlob(selectedSample.src);
+        imageDataUrl = await toDataUrl(sourceBlob);
+        thumbUrl = imageDataUrl;
       } else {
         // Unreachable: guarded by the early return above.
         return;
@@ -238,9 +235,9 @@ export function DetectPage() {
         thumbUrl = imageUrl;
         sourceBlob = selectedFile;
       } else if (selectedSample) {
-        imageDataUrl = selectedSample.dataUrl;
-        thumbUrl = selectedSample.dataUrl;
-        sourceBlob = dataUrlToBlob(selectedSample.dataUrl);
+        sourceBlob = await fetchSampleBlob(selectedSample.src);
+        imageDataUrl = await toDataUrl(sourceBlob);
+        thumbUrl = imageDataUrl;
       } else {
         // Unreachable: guarded by the early return above.
         return;
@@ -392,6 +389,13 @@ export function DetectPage() {
           <div>
             <ImageDropzone onFileAccepted={handleFileAccepted} />
 
+            {/* Sample gallery — real CCTV frames, available even while model loads (F1) */}
+            <SampleGallery
+              className="mt-4"
+              selectedId={selectedSample?.id ?? null}
+              onSelect={handleSampleSelect}
+            />
+
             {/* Preview strip */}
             {imageUrl && (
               <div className="mt-3 flex items-center gap-3 rounded-lg border border-border-default bg-bg-elevated px-4 py-3">
@@ -448,38 +452,6 @@ export function DetectPage() {
               >
                 Advanced Settings
               </Button>
-            </div>
-
-            {/* Sample images — available even while model is loading (F1) */}
-            <div className="mt-5">
-              <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.5px] text-fg-tertiary">
-                Try a sample image
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {SAMPLE_CATALOG.map((sample) => (
-                  <button
-                    key={sample.id}
-                    type="button"
-                    onClick={() => handleSampleSelect(sample)}
-                    aria-label={`Load sample: ${sample.label}`}
-                    aria-pressed={selectedSample?.id === sample.id}
-                    className={[
-                      "flex items-center gap-2 rounded-lg border px-3 py-2 text-[12px] font-medium transition-colors",
-                      selectedSample?.id === sample.id
-                        ? "border-accent bg-accent-muted text-accent"
-                        : "border-border-default bg-bg-surface text-fg-secondary hover:border-accent hover:text-accent",
-                    ].join(" ")}
-                  >
-                    <img
-                      src={sample.dataUrl}
-                      alt=""
-                      className="size-6 rounded object-cover"
-                      aria-hidden="true"
-                    />
-                    {sample.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
 
