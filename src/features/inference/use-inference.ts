@@ -18,6 +18,7 @@ import { CLASS_BY_ID } from "@/features/history-store/classes";
 import type { Detection } from "@/features/history-store/types";
 import { runSpacesFallback } from "./fallback-spaces";
 import { getInferenceService } from "./inference-service";
+import { encodeMaskToPng } from "./mask-serializer";
 import type { ErrorCode, InferenceInput, InferenceRawDetection } from "./types";
 
 // ─── Mapping ──────────────────────────────────────────────────────────────────
@@ -25,20 +26,36 @@ import type { ErrorCode, InferenceInput, InferenceRawDetection } from "./types";
 /**
  * Map raw detections (classId + bbox in original pixel space) to the
  * Detection contract (C3) consumed by canvas, result panel, and IndexedDB.
+ *
+ * For seg-task results, the raw Uint8Array mask is encoded to a PNG data URL
+ * here so the rest of the app (canvas render, Dexie persistence) deals only
+ * with strings. Encoding runs in parallel via Promise.all.
  */
-function mapToDetections(raw: InferenceRawDetection[]): Detection[] {
-  return raw.map((r) => {
-    const meta = CLASS_BY_ID[r.classId];
-    return {
-      id: uuidv4(),
-      classId: r.classId,
-      className: meta?.name ?? `Class ${r.classId}`,
-      severity: meta?.severity ?? "low",
-      confidence: r.score,
-      bbox: r.bbox,
-      color: meta?.color ?? "#888888",
-    };
-  });
+async function mapToDetections(raw: InferenceRawDetection[]): Promise<Detection[]> {
+  return Promise.all(
+    raw.map(async (r) => {
+      const meta = CLASS_BY_ID[r.classId];
+      let maskPng: string | undefined;
+      if (r.mask && r.maskWidth && r.maskHeight) {
+        try {
+          maskPng = await encodeMaskToPng(r.mask, r.maskWidth, r.maskHeight);
+        } catch (err) {
+          // Non-fatal — drop mask rendering, keep bbox + label.
+          console.warn("[use-inference] mask PNG encode failed:", err);
+        }
+      }
+      return {
+        id: uuidv4(),
+        classId: r.classId,
+        className: meta?.name ?? `Class ${r.classId}`,
+        severity: meta?.severity ?? "low",
+        confidence: r.score,
+        bbox: r.bbox,
+        color: meta?.color ?? "#888888",
+        maskPng,
+      };
+    }),
+  );
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -88,7 +105,7 @@ export function useInference(): UseInferenceResult {
       const service = await getInferenceService(session, backend);
       const result = await service.run(input, { signal: controller.signal });
       setLastTotalMs(result.totalMs);
-      return mapToDetections(result.detections);
+      return await mapToDetections(result.detections);
     } catch (err) {
       const code: ErrorCode = (err as { code?: ErrorCode }).code ?? "RUNTIME";
       const message = err instanceof Error ? err.message : "Inference failed.";

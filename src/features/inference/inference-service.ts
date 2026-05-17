@@ -16,6 +16,7 @@
 import type { InferenceSession, Tensor } from "onnxruntime-web";
 
 import { getOrt } from "@/lib/onnx/ort-loader";
+import { type PrototypeTensor, decodeMask } from "./mask-decoder";
 import { MODEL_CONFIG } from "./model-config";
 import { applyNms } from "./nms";
 import { decodeYoloOutput, detectLayout, unletterboxBoxes } from "./postprocess";
@@ -24,6 +25,7 @@ import type {
   ErrorCode,
   InferenceInput,
   InferenceRawDetection,
+  InferenceRawWithCoeffs,
   InferenceResult,
   OutputLayout,
 } from "./types";
@@ -80,6 +82,35 @@ export function clearInferenceService(): void {
   serviceInstance = null;
 }
 
+/**
+ * Materialise the prototype tensor view from the ORT result map.
+ * Expects shape [1, channels, height, width]; falls back to model-config
+ * defaults if the dim list is shorter than expected.
+ */
+function decodeMaskPrototypes(
+  results: Record<string, Tensor>,
+  session: InferenceSession,
+): PrototypeTensor {
+  const protoName = session.outputNames[1] ?? "output1";
+  const proto = results[protoName];
+  if (proto === undefined) {
+    throw new InferenceError(
+      `Segment model output '${protoName}' missing from session.run results.`,
+      "RUNTIME",
+    );
+  }
+  const dims = proto.dims;
+  const channels = dims[1] ?? MODEL_CONFIG.maskChannels;
+  const height = dims[2] ?? MODEL_CONFIG.maskRes;
+  const width = dims[3] ?? MODEL_CONFIG.maskRes;
+  return {
+    data: proto.data as Float32Array,
+    channels,
+    height,
+    width,
+  };
+}
+
 // ─── Warming run ─────────────────────────────────────────────────────────────
 
 async function performWarmingRun(session: InferenceSession): Promise<OutputLayout> {
@@ -107,7 +138,6 @@ async function performWarmingRun(session: InferenceSession): Promise<OutputLayou
     throw new InferenceError("Warming run produced no output tensor.", "RUNTIME");
   }
 
-  // Validate dtype (C1' — ORT exposes float32 even for FP16 models)
   if (output.type !== "float32") {
     throw new InferenceError(
       `Expected float32 output, got '${output.type}'. Model may need re-export.`,
@@ -115,7 +145,18 @@ async function performWarmingRun(session: InferenceSession): Promise<OutputLayou
     );
   }
 
-  return detectLayout(output.dims, MODEL_CONFIG.numClasses);
+  // Seg models must emit a second output (prototypes) — fail loud when missing.
+  if (MODEL_CONFIG.modelTask === "segment") {
+    if (session.outputNames.length < 2) {
+      throw new InferenceError(
+        "Segment task configured but ONNX has < 2 outputs. Re-export with task=segment.",
+        "UNSUPPORTED",
+      );
+    }
+  }
+
+  const maskChannels = MODEL_CONFIG.modelTask === "segment" ? MODEL_CONFIG.maskChannels : 0;
+  return detectLayout(output.dims, MODEL_CONFIG.numClasses, maskChannels);
 }
 
 // ─── Service factory ──────────────────────────────────────────────────────────
@@ -165,12 +206,15 @@ function createService(
 
     opts?.signal?.throwIfAborted();
 
-    // Decode output
-    const outputName = session.outputNames[0] ?? "output0";
-    const rawOutput = results[outputName];
+    // Decode output[0] = detections (+ mask coefficients when segment)
+    const detName = session.outputNames[0] ?? "output0";
+    const rawOutput = results[detName];
     if (rawOutput === undefined) {
       throw new InferenceError("No output tensor produced.", "RUNTIME");
     }
+
+    const isSegment = MODEL_CONFIG.modelTask === "segment";
+    const maskChannels = isSegment ? MODEL_CONFIG.maskChannels : 0;
 
     const rawData = rawOutput.data as Float32Array;
     const decoded = decodeYoloOutput(
@@ -178,21 +222,66 @@ function createService(
       MODEL_CONFIG.confThreshold,
       MODEL_CONFIG.numClasses,
       layout,
+      maskChannels,
     );
 
-    // Invert letterbox transform
+    // Invert letterbox transform (preserves coeffs / bbox640Norm for seg)
     const unboxed = unletterboxBoxes(decoded, lb, MODEL_CONFIG.inputSize);
 
-    // NMS
-    const nmsed: InferenceRawDetection[] = applyNms(
+    // NMS — generic over T extends InferenceRawDetection so we keep mask data
+    const nmsed: InferenceRawWithCoeffs[] = applyNms(
       unboxed,
       MODEL_CONFIG.iouThreshold,
       MODEL_CONFIG.maxDetections,
+    ) as InferenceRawWithCoeffs[];
+
+    // Mask decode (segment only) — strip coeffs/bbox640Norm before returning.
+    let maskDecodeMs = 0;
+    if (isSegment) {
+      const maskStart = performance.now();
+      const protoTensor = decodeMaskPrototypes(results, session);
+
+      for (const det of nmsed) {
+        if (det.coeffs && det.bbox640Norm) {
+          try {
+            const decodedMask = decodeMask(
+              det.coeffs,
+              protoTensor,
+              det.bbox640Norm,
+              lb,
+              MODEL_CONFIG.inputSize,
+            );
+            if (decodedMask !== null) {
+              det.mask = decodedMask.mask;
+              det.maskWidth = decodedMask.width;
+              det.maskHeight = decodedMask.height;
+            }
+          } catch (err) {
+            console.warn(
+              "[inference-service] mask decode failed for detection — skipping mask only:",
+              err,
+            );
+          }
+        }
+        det.coeffs = undefined;
+        det.bbox640Norm = undefined;
+      }
+      maskDecodeMs = performance.now() - maskStart;
+    }
+
+    const finalDetections: InferenceRawDetection[] = nmsed.map(
+      ({ coeffs: _coeffs, bbox640Norm: _bbox640Norm, ...rest }) => rest,
     );
 
     const totalMs = performance.now() - totalStart;
 
-    return { detections: nmsed, inferenceMs, totalMs, backend };
+    return {
+      detections: finalDetections,
+      inferenceMs,
+      maskDecodeMs: isSegment ? maskDecodeMs : undefined,
+      totalMs,
+      backend,
+    };
   }
 
   return { run, layout, backend };
