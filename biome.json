@@ -12,6 +12,7 @@
       "dist",
       ".vite",
       "model",
+      "public/seed-history",
       "src/components/ui",
       ".agents",
       ".claude",

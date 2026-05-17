@@ -55,6 +55,23 @@ class PipeVisionDatabase extends Dexie {
     this.version(1).stores({
       records: "id, createdAt, modelVersion, *detections.classId",
     });
+
+    /**
+     * Version 2 — drop the legacy SVG placeholder seed so the new real-CCTV
+     * seed (`seed.ts`) can repopulate on next launch. Real user-saved
+     * inspections are preserved: only records whose thumbnail is an inline
+     * SVG data URL are removed.
+     */
+    this.version(2)
+      .stores({
+        records: "id, createdAt, modelVersion, *detections.classId",
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<HistoryRecord, string>("records")
+          .filter((r) => r.thumbnailDataUrl?.startsWith("data:image/svg") ?? false)
+          .delete();
+      });
   }
 }
 
