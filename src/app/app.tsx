@@ -34,11 +34,11 @@ export function App() {
               Skip to main content
             </a>
 
-            <div className="flex min-h-screen bg-bg-base">
+            <div className="flex h-screen bg-bg-base">
               <AppSidebar />
 
-              {/* Main content — grows to fill remaining space */}
-              <div className="flex min-w-0 flex-1 flex-col overflow-auto">
+              {/* Main content — independent scroll so the sidebar stays anchored */}
+              <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
                 <AppRoutes />
               </div>
             </div>
