@@ -155,6 +155,8 @@ async function performWarmingRun(session: InferenceSession): Promise<OutputLayou
   const size = MODEL_CONFIG.inputSize;
   const dummyData = new Float32Array(1 * 3 * size * size).fill(0.5);
   const inputDtype = resolveInputDtype(session);
+  // One-time diagnostic: confirms the dtype path we took. Cheap (single log).
+  console.info("[inference] input dtype:", inputDtype, "metadata:", session.inputMetadata?.[0]);
   const dummyTensor = buildInputTensor(ort, dummyData, [1, 3, size, size], inputDtype);
 
   const inputName = session.inputNames[0] ?? "images";
