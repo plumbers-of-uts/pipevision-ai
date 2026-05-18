@@ -6,16 +6,14 @@
  *   2. Dataset info (Roboflow Sewage Defect Detection, 980 images, 70/20/10 split)
  *   3. MetricsTable (test + val tabs, per-class PDF numbers)
  *   4. PerClassChart (horizontal bar, mAP@0.5 sorted desc)
- *   5. TrainingCurveChart (loss + mAP vs epoch, best ckpt at ep 57)
- *   6. FutureWorkCards (6 planned experiments from PDF)
+ *   5. TrainingCurveChart (loss + mAP vs epoch, best ckpt at ep 114)
  *
  * Matches gui-mockup.html #page-models (lines 1325-end).
  * All mAP numbers are the honest PDF values (0.44 overall). No fake 94%.
  */
 
-import { BookOpen, Brain, ChartLine, Database, FlaskConical, LayoutGrid } from "lucide-react";
+import { BookOpen, Brain, ChartLine, Database, LayoutGrid } from "lucide-react";
 
-import { FutureWorkCards } from "@/widgets/future-work-cards";
 import { MetricsTable } from "@/widgets/metrics-table";
 import { PerClassChart } from "@/widgets/per-class-chart";
 import { TrainingCurveChart } from "@/widgets/training-curve-chart";
@@ -31,7 +29,7 @@ const ARCH_SPECS = [
   { key: "Input size", val: "640 × 640" },
   { key: "mAP@0.5", val: "0.440 (test)" },
   { key: "mAP@0.5:0.95", val: "0.198 (test)" },
-  { key: "Best epoch", val: "57 / 100" },
+  { key: "Best epoch", val: "114 / 200" },
   { key: "Framework", val: "PyTorch 2.x + Ultralytics" },
 ] as const;
 
@@ -162,22 +160,12 @@ export function ModelsPage() {
         className="mb-6 rounded-lg border border-border-default bg-bg-surface p-5"
         aria-label="Training curves"
       >
-        <SectionHeading icon={ChartLine} title="Training Curves (Epoch 1–100)" />
+        <SectionHeading icon={ChartLine} title="Training Curves (Epoch 1–200)" />
         <TrainingCurveChart />
         <p className="mt-3 text-[11px] text-fg-tertiary">
           Note: training curve values are plausible mock data derived from the reported final
           metrics. Actual per-epoch logs were not included in the PDF.
         </p>
-      </section>
-
-      {/* Future work cards */}
-      <section aria-label="Planned future experiments">
-        <SectionHeading icon={FlaskConical} title="Further Experiments (PDF §Further Work)" />
-        <p className="mb-4 text-[13px] text-fg-secondary">
-          Six planned experiments from the research paper to improve beyond the current 0.440
-          mAP@0.5 baseline.
-        </p>
-        <FutureWorkCards />
       </section>
 
       {/* Reference footer */}
