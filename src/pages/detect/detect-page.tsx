@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { PIPEVISION_CLASSES } from "@/features/history-store/classes";
 import { createRecord } from "@/features/history-store/repository";
 import type { Detection, HistoryRecord } from "@/features/history-store/types";
+import { composeAnnotatedImage } from "@/features/inference/annotate-image";
 import { isSpacesFallbackAvailable, runSpacesFallback } from "@/features/inference/fallback-spaces";
 import { sourceToBitmap } from "@/features/inference/preprocess";
 import type { ErrorCode } from "@/features/inference/types";
@@ -201,9 +202,14 @@ export function DetectPage() {
 
       const elapsed = Date.now() - startMs;
 
+      const annotatedThumb = await composeAnnotatedImage(sourceBlob, dets).catch((e) => {
+        console.warn("[DetectPage] Annotated thumbnail composition failed:", e);
+        return thumbUrl;
+      });
+
       const record = await createRecord({
         imageBlob: sourceBlob,
-        thumbnailDataUrl: thumbUrl,
+        thumbnailDataUrl: annotatedThumb,
         detections: dets,
         inferenceMs: elapsed,
         modelVersion:
@@ -253,9 +259,14 @@ export function DetectPage() {
       setImgHeight(bitmap.height);
       bitmap.close();
 
+      const annotatedThumb = await composeAnnotatedImage(sourceBlob, dets).catch((e) => {
+        console.warn("[DetectPage] Annotated thumbnail composition failed:", e);
+        return thumbUrl;
+      });
+
       const record = await createRecord({
         imageBlob: sourceBlob,
-        thumbnailDataUrl: thumbUrl,
+        thumbnailDataUrl: annotatedThumb,
         detections: dets,
         inferenceMs: 0,
         modelVersion: "yolo26m-pipevision-fp16-spaces",
@@ -428,14 +439,6 @@ export function DetectPage() {
                   : isModelLoading
                     ? "Waiting for model…"
                     : "Run Detection"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="lg"
-                disabled
-                aria-label="Advanced settings (not available)"
-              >
-                Advanced Settings
               </Button>
             </div>
           </div>
