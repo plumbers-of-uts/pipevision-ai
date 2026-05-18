@@ -15,6 +15,7 @@
 
 import type { InferenceSession, Tensor } from "onnxruntime-web";
 
+import { float16ToFloat32Array, float32ToFloat16Array } from "@/lib/onnx/fp16";
 import { getOrt } from "@/lib/onnx/ort-loader";
 import { type PrototypeTensor, decodeMask } from "./mask-decoder";
 import { MODEL_CONFIG } from "./model-config";
@@ -104,11 +105,47 @@ function decodeMaskPrototypes(
   const height = dims[2] ?? MODEL_CONFIG.maskRes;
   const width = dims[3] ?? MODEL_CONFIG.maskRes;
   return {
-    data: proto.data as Float32Array,
+    data: outputAsFloat32(proto),
     channels,
     height,
     width,
   };
+}
+
+// ─── Dtype helpers ────────────────────────────────────────────────────────────
+
+/** Inspect inputMetadata[0].type to decide whether to feed float32 or float16. */
+function resolveInputDtype(session: InferenceSession): "float32" | "float16" {
+  const meta = session.inputMetadata?.[0];
+  if (meta?.isTensor && meta.type === "float16") return "float16";
+  return "float32";
+}
+
+/**
+ * Build the input ORT Tensor in whichever dtype the model declares.
+ * Source data is always produced as float32; this converts to fp16 bits
+ * when needed (Uint16Array backing for ORT's fp16 type).
+ */
+function buildInputTensor(
+  ort: Awaited<ReturnType<typeof getOrt>>,
+  src: Float32Array,
+  dims: readonly number[],
+  dtype: "float32" | "float16",
+): Tensor {
+  if (dtype === "float16") {
+    return new ort.Tensor("float16", float32ToFloat16Array(src), dims as number[]);
+  }
+  return new ort.Tensor("float32", src, dims as number[]);
+}
+
+/** Normalise an output tensor to a Float32Array regardless of declared dtype. */
+function outputAsFloat32(output: Tensor): Float32Array {
+  if (output.type === "float32") return output.data as Float32Array;
+  if (output.type === "float16") return float16ToFloat32Array(output.data as Uint16Array);
+  throw new InferenceError(
+    `Unsupported output dtype '${output.type}'. Re-export with float32/float16 output.`,
+    "UNSUPPORTED",
+  );
 }
 
 // ─── Warming run ─────────────────────────────────────────────────────────────
@@ -117,7 +154,8 @@ async function performWarmingRun(session: InferenceSession): Promise<OutputLayou
   const ort = await getOrt();
   const size = MODEL_CONFIG.inputSize;
   const dummyData = new Float32Array(1 * 3 * size * size).fill(0.5);
-  const dummyTensor = new ort.Tensor("float32", dummyData, [1, 3, size, size]);
+  const inputDtype = resolveInputDtype(session);
+  const dummyTensor = buildInputTensor(ort, dummyData, [1, 3, size, size], inputDtype);
 
   const inputName = session.inputNames[0] ?? "images";
   const feeds: Record<string, Tensor> = { [inputName]: dummyTensor };
@@ -138,9 +176,9 @@ async function performWarmingRun(session: InferenceSession): Promise<OutputLayou
     throw new InferenceError("Warming run produced no output tensor.", "RUNTIME");
   }
 
-  if (output.type !== "float32") {
+  if (output.type !== "float32" && output.type !== "float16") {
     throw new InferenceError(
-      `Expected float32 output, got '${output.type}'. Model may need re-export.`,
+      `Expected float32/float16 output, got '${output.type}'. Model may need re-export.`,
       "UNSUPPORTED",
     );
   }
@@ -181,15 +219,16 @@ function createService(
 
     opts?.signal?.throwIfAborted();
 
-    // Build ORT tensor
+    // Build ORT tensor — convert to fp16 when the model declares fp16 input.
     const ort = await getOrt();
     const inputName = session.inputNames[0] ?? "images";
-    const ortTensor = new ort.Tensor("float32", lb.tensor, [
-      1,
-      3,
-      MODEL_CONFIG.inputSize,
-      MODEL_CONFIG.inputSize,
-    ]);
+    const inputDtype = resolveInputDtype(session);
+    const ortTensor = buildInputTensor(
+      ort,
+      lb.tensor,
+      [1, 3, MODEL_CONFIG.inputSize, MODEL_CONFIG.inputSize],
+      inputDtype,
+    );
 
     // Run session
     const inferStart = performance.now();
@@ -216,7 +255,7 @@ function createService(
     const isSegment = MODEL_CONFIG.modelTask === "segment";
     const maskChannels = isSegment ? MODEL_CONFIG.maskChannels : 0;
 
-    const rawData = rawOutput.data as Float32Array;
+    const rawData = outputAsFloat32(rawOutput);
     const decoded = decodeYoloOutput(
       { data: rawData, dims: rawOutput.dims },
       MODEL_CONFIG.confThreshold,
