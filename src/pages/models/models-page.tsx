@@ -97,10 +97,6 @@ export function ModelsPage() {
               <SpecRow key={s.key} label={s.key} value={s.val} />
             ))}
           </div>
-          <p className="mt-3 rounded bg-accent-muted px-3 py-2 text-[11px] leading-relaxed text-accent-text">
-            mAP@0.5 = 0.440 is the PDF benchmark result on the held-out test set (design constraint
-            D9 — honest accuracy).
-          </p>
         </section>
 
         <section
