@@ -252,8 +252,8 @@ export function TrainingCurveChart() {
           <XAxis
             dataKey="epoch"
             type="number"
-            domain={[40, 200]}
-            tickCount={9}
+            domain={[0, 200]}
+            tickCount={11}
             tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "hsl(220, 8%, 45%)" }}
             axisLine={false}
             tickLine={false}
