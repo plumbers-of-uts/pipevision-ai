@@ -1,7 +1,7 @@
 /**
  * per-class-chart.tsx — Horizontal recharts bar of mAP@0.5 per class (sorted desc).
- * Highlights worst 2 (Crack, Joint offset) with severity-critical color band.
- * Uses PDF test set numbers. Honest mAP@0.5 = 0.44 overall.
+ * Highlights worst 2 (Buckling, Joint offset) with severity-critical color band.
+ * Numbers come from cnn-assignment3/model/per_class_metrics.csv (box, test split).
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -14,14 +14,14 @@ interface ClassData {
 }
 
 const CLASS_DATA: ClassData[] = [
-  { name: "Utility intrusion", map50: 0.708, worst: false },
-  { name: "Obstacle", map50: 0.668, worst: false },
-  { name: "Debris", map50: 0.416, worst: false },
-  { name: "All (avg)", map50: 0.44, worst: false },
-  { name: "Hole", map50: 0.379, worst: false },
-  { name: "Crack", map50: 0.384, worst: true },
-  { name: "Buckling", map50: 0.326, worst: false },
-  { name: "Joint offset", map50: 0.196, worst: true },
+  { name: "Utility intrusion", map50: 0.901, worst: false },
+  { name: "Hole", map50: 0.832, worst: false },
+  { name: "Obstacle", map50: 0.704, worst: false },
+  { name: "Debris", map50: 0.597, worst: false },
+  { name: "All (avg)", map50: 0.534, worst: false },
+  { name: "Crack", map50: 0.397, worst: false },
+  { name: "Joint offset", map50: 0.225, worst: true },
+  { name: "Buckling", map50: 0.08, worst: true },
 ].sort((a, b) => b.map50 - a.map50);
 
 // DESIGN.md HSL tokens (avoid oklch — recharts SVG renders unreliably with oklch in some browsers)
@@ -85,8 +85,8 @@ export function PerClassChart() {
           <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={GRID} />
           <XAxis
             type="number"
-            domain={[0, 0.8]}
-            tickCount={5}
+            domain={[0, 1]}
+            tickCount={6}
             tickFormatter={(v: number) => v.toFixed(1)}
             tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: TICK }}
             axisLine={false}

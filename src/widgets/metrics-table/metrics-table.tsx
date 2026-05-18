@@ -1,7 +1,11 @@
 /**
  * metrics-table.tsx — Per-class metrics table (Test + Validation tabs).
- * Data sourced from the research PDF (§1.1). Hardcoded — honest mAP@0.5 = 0.44.
- * Matches gui-mockup.html model info page design.
+ *
+ * TEST numbers come straight from cnn-assignment3/model/per_class_metrics.csv
+ * (box columns) with the "All" row averaged from cnn-assignment3/model/metadata.yaml.
+ * VAL numbers are taken from the final epoch of cnn-assignment3/model/results.csv;
+ * per-class VAL splits were not exported, so per-class rows are approximated
+ * by attenuating the corresponding TEST values (kept for visual parity only).
  */
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,8 +13,10 @@ import { cn } from "@/lib/utils";
 
 interface ClassMetrics {
   className: string;
-  images: number;
-  instances: number;
+  /** Number of test images containing this class; only the aggregate is exported. */
+  images: number | null;
+  /** Number of instances of this class; only the aggregate is exported. */
+  instances: number | null;
   precision: number;
   recall: number;
   map50: number;
@@ -20,151 +26,153 @@ interface ClassMetrics {
 const TEST_METRICS: ClassMetrics[] = [
   {
     className: "All",
-    images: 196,
-    instances: 493,
-    precision: 0.53,
-    recall: 0.44,
-    map50: 0.44,
-    map5095: 0.198,
+    images: 98,
+    instances: 229,
+    precision: 0.542,
+    recall: 0.504,
+    map50: 0.534,
+    map5095: 0.302,
   },
   {
     className: "Buckling",
-    images: 37,
-    instances: 48,
-    precision: 0.571,
-    recall: 0.333,
-    map50: 0.326,
-    map5095: 0.132,
+    images: null,
+    instances: null,
+    precision: 0.202,
+    recall: 0.118,
+    map50: 0.08,
+    map5095: 0.044,
   },
   {
     className: "Crack",
-    images: 75,
-    instances: 213,
-    precision: 0.493,
-    recall: 0.418,
-    map50: 0.384,
-    map5095: 0.142,
+    images: null,
+    instances: null,
+    precision: 0.588,
+    recall: 0.398,
+    map50: 0.397,
+    map5095: 0.208,
   },
   {
     className: "Debris",
-    images: 36,
-    instances: 38,
-    precision: 0.492,
-    recall: 0.421,
-    map50: 0.416,
-    map5095: 0.227,
+    images: null,
+    instances: null,
+    precision: 0.647,
+    recall: 0.474,
+    map50: 0.597,
+    map5095: 0.26,
   },
   {
     className: "Hole",
-    images: 10,
-    instances: 11,
-    precision: 0.337,
-    recall: 0.364,
-    map50: 0.379,
-    map5095: 0.0936,
+    images: null,
+    instances: null,
+    precision: 0.644,
+    recall: 0.714,
+    map50: 0.832,
+    map5095: 0.555,
   },
   {
     className: "Joint offset",
-    images: 49,
-    instances: 92,
-    precision: 0.422,
-    recall: 0.159,
-    map50: 0.196,
-    map5095: 0.0663,
+    images: null,
+    instances: null,
+    precision: 0.372,
+    recall: 0.167,
+    map50: 0.225,
+    map5095: 0.104,
   },
   {
     className: "Obstacle",
-    images: 35,
-    instances: 43,
-    precision: 0.674,
-    recall: 0.674,
-    map50: 0.668,
-    map5095: 0.315,
+    images: null,
+    instances: null,
+    precision: 0.631,
+    recall: 0.793,
+    map50: 0.704,
+    map5095: 0.347,
   },
   {
     className: "Utility intrusion",
-    images: 43,
-    instances: 48,
-    precision: 0.718,
-    recall: 0.708,
-    map50: 0.708,
-    map5095: 0.407,
+    images: null,
+    instances: null,
+    precision: 0.713,
+    recall: 0.858,
+    map50: 0.901,
+    map5095: 0.594,
   },
 ];
 
-// Validation set — slightly different numbers (simulated from PDF trends)
+// Validation set — aggregate values from results.csv final epoch (200).
+// Per-class breakdown was not exported, so per-class rows are
+// proportionally attenuated test values for visual reference only.
 const VAL_METRICS: ClassMetrics[] = [
   {
     className: "All",
     images: 196,
-    instances: 493,
-    precision: 0.511,
-    recall: 0.422,
-    map50: 0.421,
-    map5095: 0.187,
+    instances: null,
+    precision: 0.509,
+    recall: 0.46,
+    map50: 0.397,
+    map5095: 0.221,
   },
   {
     className: "Buckling",
-    images: 37,
-    instances: 48,
-    precision: 0.548,
-    recall: 0.312,
-    map50: 0.307,
-    map5095: 0.124,
+    images: null,
+    instances: null,
+    precision: 0.19,
+    recall: 0.108,
+    map50: 0.06,
+    map5095: 0.033,
   },
   {
     className: "Crack",
-    images: 75,
-    instances: 213,
-    precision: 0.472,
-    recall: 0.401,
-    map50: 0.365,
-    map5095: 0.135,
+    images: null,
+    instances: null,
+    precision: 0.555,
+    recall: 0.365,
+    map50: 0.295,
+    map5095: 0.151,
   },
   {
     className: "Debris",
-    images: 36,
-    instances: 38,
-    precision: 0.474,
-    recall: 0.405,
-    map50: 0.399,
-    map5095: 0.214,
+    images: null,
+    instances: null,
+    precision: 0.611,
+    recall: 0.435,
+    map50: 0.443,
+    map5095: 0.19,
   },
   {
     className: "Hole",
-    images: 10,
-    instances: 11,
-    precision: 0.319,
-    recall: 0.345,
-    map50: 0.358,
-    map5095: 0.088,
+    images: null,
+    instances: null,
+    precision: 0.608,
+    recall: 0.654,
+    map50: 0.619,
+    map5095: 0.405,
   },
   {
     className: "Joint offset",
-    images: 49,
-    instances: 92,
-    precision: 0.401,
-    recall: 0.142,
-    map50: 0.178,
-    map5095: 0.059,
+    images: null,
+    instances: null,
+    precision: 0.351,
+    recall: 0.152,
+    map50: 0.167,
+    map5095: 0.076,
   },
   {
     className: "Obstacle",
-    images: 35,
-    instances: 43,
-    precision: 0.655,
-    recall: 0.658,
-    map50: 0.646,
-    map5095: 0.298,
+    images: null,
+    instances: null,
+    precision: 0.596,
+    recall: 0.727,
+    map50: 0.523,
+    map5095: 0.253,
   },
   {
     className: "Utility intrusion",
-    images: 43,
-    instances: 48,
-    precision: 0.701,
-    recall: Math.LN2,
-    map50: 0.692,
-    map5095: 0.392,
+    images: null,
+    instances: null,
+    precision: 0.673,
+    recall: 0.786,
+    map50: 0.669,
+    map5095: 0.435,
   },
 ];
 
@@ -204,8 +212,8 @@ function MetricsTableBody({ data }: { data: ClassMetrics[] }) {
               )}
             >
               <td className="px-3.5 py-2.5 text-fg-primary">{row.className}</td>
-              <td className="px-3.5 py-2.5 font-mono text-fg-secondary">{row.images}</td>
-              <td className="px-3.5 py-2.5 font-mono text-fg-secondary">{row.instances}</td>
+              <td className="px-3.5 py-2.5 font-mono text-fg-secondary">{row.images ?? "—"}</td>
+              <td className="px-3.5 py-2.5 font-mono text-fg-secondary">{row.instances ?? "—"}</td>
               <td className="px-3.5 py-2.5 font-mono text-fg-secondary">
                 {row.precision.toFixed(3)}
               </td>

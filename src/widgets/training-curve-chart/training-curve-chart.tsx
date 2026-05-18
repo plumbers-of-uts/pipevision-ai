@@ -1,12 +1,12 @@
 /**
  * training-curve-chart.tsx — Recharts line chart: train_loss, val_loss, mAP@0.5 vs epoch.
  *
- * Mock data: plausible YOLOv8m training run (57 epochs to best checkpoint).
- * - train_loss: starts ~3.5, declines to ~0.95 by epoch 57, plateaus
- * - val_loss:   starts ~3.8, declines to ~1.10 by epoch 57, slight overfit after
- * - mAP@0.5:    starts 0, climbs to 0.44 by epoch 57, small plateau/wiggle after
+ * Mock data: plausible YOLO26m-seg training run (200 epochs, best ckpt at 114).
+ * - train_loss: starts ~3.5, declines to ~0.95 by epoch 114, plateaus
+ * - val_loss:   starts ~3.8, declines to ~1.10 by epoch 114, slight overfit after
+ * - mAP@0.5:    starts 0, climbs to 0.44 by epoch 114, small plateau/wiggle after
  *
- * Best checkpoint at epoch 57 marked with a ReferenceLine.
+ * Best checkpoint at epoch 114 marked with a ReferenceLine.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -32,27 +32,28 @@ interface EpochPoint {
 /** Smooth exponential-decay curve with mild noise injected deterministically. */
 function buildCurveData(): EpochPoint[] {
   const points: EpochPoint[] = [];
-  const EPOCHS = 100;
-  const BEST = 57;
+  const EPOCHS = 200;
+  const BEST = 114;
 
   for (let e = 0; e <= EPOCHS; e++) {
     // Deterministic noise: small sine + cosine perturbation
     const noise = Math.sin(e * 0.7) * 0.04 + Math.cos(e * 1.3) * 0.03;
     const noiseV = Math.sin(e * 0.5 + 1) * 0.05 + Math.cos(e * 1.1 + 2) * 0.04;
 
-    // Loss decay: exponential with plateau
-    const decay = Math.exp(-e / 22);
+    // Loss decay: exponential with plateau (time-constant scaled to BEST so the
+    // curve still bottoms out around the best-checkpoint epoch).
+    const decay = Math.exp(-e / 44);
     const trainLoss = +(0.95 + 2.55 * decay + noise).toFixed(3);
 
-    // Val loss follows but slightly higher + subtle overfit after best epoch
-    const overfit = e > BEST ? (e - BEST) * 0.003 : 0;
-    const valLoss = +(1.1 + 2.7 * Math.exp(-e / 20) + noiseV + overfit).toFixed(3);
+    // Val loss follows but slightly higher + subtle overfit after best epoch.
+    const overfit = e > BEST ? (e - BEST) * 0.0015 : 0;
+    const valLoss = +(1.1 + 2.7 * Math.exp(-e / 40) + noiseV + overfit).toFixed(3);
 
-    // mAP rises with diminishing returns, best at epoch 57 = 0.44
+    // mAP rises with diminishing returns, best at epoch 114 ≈ 0.44 (val peak ≈ 0.434).
     const mapMax = 0.44;
-    const mapRise = mapMax * (1 - Math.exp(-e / 18));
-    // Slight decay after best checkpoint (overfitting)
-    const mapDecay = e > BEST ? (e - BEST) * 0.0012 : 0;
+    const mapRise = mapMax * (1 - Math.exp(-e / 36));
+    // Slight decay after best checkpoint (overfitting).
+    const mapDecay = e > BEST ? (e - BEST) * 0.0006 : 0;
     const mapNoise = Math.sin(e * 0.9 + 0.5) * 0.008;
     const map50 = +Math.max(0, Math.min(mapMax, mapRise - mapDecay + mapNoise)).toFixed(4);
 
@@ -121,7 +122,7 @@ export function TrainingCurveChart() {
           <XAxis
             dataKey="epoch"
             type="number"
-            domain={[0, 100]}
+            domain={[0, 200]}
             tickCount={11}
             tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "hsl(220, 8%, 45%)" }}
             axisLine={false}
@@ -168,15 +169,15 @@ export function TrainingCurveChart() {
             wrapperStyle={{ fontSize: 11, fontFamily: "var(--font-sans)" }}
           />
 
-          {/* Best checkpoint reference line at epoch 57 */}
+          {/* Best checkpoint reference line at epoch 114 */}
           <ReferenceLine
             yAxisId="loss"
-            x={57}
+            x={114}
             stroke="hsl(0, 72%, 45%)"
             strokeDasharray="4 3"
             strokeWidth={1.5}
             label={{
-              value: "Best ckpt (ep 57)",
+              value: "Best ckpt (ep 114)",
               position: "insideTopRight",
               style: { fontSize: 10, fill: "hsl(0, 72%, 45%)", fontFamily: "var(--font-mono)" },
             }}
@@ -220,7 +221,7 @@ export function TrainingCurveChart() {
 
       {/* Summary note */}
       <p className="mt-2 text-center text-[11px] text-fg-tertiary">
-        Best checkpoint saved at epoch 57 — mAP@0.5 = 0.440 · val_loss = 1.10
+        Best checkpoint saved at epoch 114 — mAP@0.5 = 0.440 · val_loss = 1.10
       </p>
     </div>
   );

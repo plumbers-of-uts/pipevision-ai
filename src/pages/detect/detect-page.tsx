@@ -647,7 +647,7 @@ export function DetectPage() {
               <div className="flex items-start gap-2 rounded-lg border border-border-default bg-bg-surface px-3.5 py-3">
                 <Info className="mt-0.5 size-3.5 shrink-0 text-fg-tertiary" aria-hidden="true" />
                 <p className="text-[11px] leading-relaxed text-fg-tertiary">
-                  Demo accuracy: mAP@0.5 = 0.44 — may miss subtle defects.
+                  Demo accuracy: test mAP@0.5 (box) = 0.534 — may miss subtle defects.
                 </p>
               </div>
             </div>

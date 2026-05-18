@@ -2,14 +2,14 @@
  * models-page.tsx — Model Information page.
  *
  * Sections (top to bottom):
- *   1. Architecture summary (YOLO26m, 21.8M params, FP16 ONNX, 44 MB, opset 17)
+ *   1. Architecture summary (YOLO26m-seg, FP16 ONNX, 45 MB, opset 17)
  *   2. Dataset info (Roboflow Sewage Defect Detection, 980 images, 70/20/10 split)
- *   3. MetricsTable (test + val tabs, per-class PDF numbers)
+ *   3. MetricsTable (test + val tabs, per-class numbers from model/per_class_metrics.csv)
  *   4. PerClassChart (horizontal bar, mAP@0.5 sorted desc)
  *   5. TrainingCurveChart (loss + mAP vs epoch, best ckpt at ep 114)
  *
  * Matches gui-mockup.html #page-models (lines 1325-end).
- * All mAP numbers are the honest PDF values (0.44 overall). No fake 94%.
+ * All metric values come straight from cnn-assignment3/model/{metadata.yaml,per_class_metrics.csv}.
  */
 
 import { BookOpen, Brain, ChartLine, Database, LayoutGrid } from "lucide-react";
@@ -21,14 +21,16 @@ import { TrainingCurveChart } from "@/widgets/training-curve-chart";
 // ─── Spec data ────────────────────────────────────────────────────────────────
 
 const ARCH_SPECS = [
-  { key: "Architecture", val: "YOLO26m (Ultralytics)" },
+  { key: "Architecture", val: "YOLO26m-seg (Ultralytics)" },
   { key: "Parameters", val: "21.8M" },
   { key: "Precision", val: "FP16 ONNX" },
-  { key: "Model size", val: "44 MB" },
+  { key: "Model size", val: "45 MB" },
   { key: "ONNX opset", val: "17" },
   { key: "Input size", val: "640 × 640" },
-  { key: "mAP@0.5", val: "0.440 (test)" },
-  { key: "mAP@0.5:0.95", val: "0.198 (test)" },
+  { key: "mAP@0.5 (box)", val: "0.534 (test)" },
+  { key: "mAP@0.5:0.95 (box)", val: "0.302 (test)" },
+  { key: "mAP@0.5 (mask)", val: "0.475 (test)" },
+  { key: "mAP@0.5:0.95 (mask)", val: "0.271 (test)" },
   { key: "Best epoch", val: "114 / 200" },
   { key: "Framework", val: "PyTorch 2.x + Ultralytics" },
 ] as const;

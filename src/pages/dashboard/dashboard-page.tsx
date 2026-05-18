@@ -6,7 +6,8 @@
  *   - Two-column lower grid: Recent Detections (left) | Defect Distribution (right ~340px)
  *
  * Live data sourced from IndexedDB via aggregateStats().
- * Detection Accuracy is static "44.0%" — honest PDF benchmark mAP@0.5 (design constraint D9).
+ * Detection Accuracy is static "53.4%" — test split mAP@0.5 (box) from model metadata
+ * (cnn-assignment3/model/metadata.yaml), design constraint D9 (honest values, no inflation).
  */
 
 import { useRequest } from "ahooks";
@@ -90,12 +91,12 @@ export function DashboardPage() {
           accentColor="oklch(0.5 0.22 25)"
         />
 
-        {/* Static honest PDF mAP@0.5 — do NOT change to 94% */}
+        {/* Test split mAP@0.5 (box) from cnn-assignment3/model/metadata.yaml — do NOT change to 94% */}
         <StatCard
           icon={Target}
-          value="44.0%"
+          value="53.4%"
           label="Detection Accuracy"
-          subtitle="PDF benchmark — mAP@0.5"
+          subtitle="Test mAP@0.5 (box)"
           deltaDirection="neutral"
           accentColor="oklch(0.62 0.16 80)"
         />
