@@ -5,7 +5,6 @@
  *   1. Architecture summary (YOLO26m-seg, FP16 ONNX, 45 MB, opset 17)
  *   2. Dataset info (Roboflow Sewage Defect Detection, 980 images, 70/20/10 split)
  *   3. PerClassChart (horizontal bar, mAP@0.5 sorted desc)
- *   4. TrainingCurveChart (loss + mAP vs epoch, best ckpt at ep 114)
  *
  * All metric values come straight from cnn-assignment3/model/{metadata.yaml,per_class_metrics.csv}.
  */
@@ -13,7 +12,6 @@
 import { Brain, ChartLine, Database } from "lucide-react";
 
 import { PerClassChart } from "@/widgets/per-class-chart";
-import { TrainingCurveChart } from "@/widgets/training-curve-chart";
 
 // ─── Spec data ────────────────────────────────────────────────────────────────
 
@@ -139,15 +137,6 @@ export function ModelsPage() {
       >
         <SectionHeading icon={ChartLine} title="mAP@0.5 by Class" />
         <PerClassChart />
-      </section>
-
-      {/* Training curve chart */}
-      <section
-        className="mb-6 rounded-lg border border-border-default bg-bg-surface p-5"
-        aria-label="Training curves"
-      >
-        <SectionHeading icon={ChartLine} title="Training Curves (Epoch 1–200)" />
-        <TrainingCurveChart />
       </section>
     </main>
   );
