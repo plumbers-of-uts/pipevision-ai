@@ -13,34 +13,13 @@
 import { useRequest } from "ahooks";
 import { Images, Target, Timer, TriangleAlert, Wrench } from "lucide-react";
 
-import { useModelStatus } from "@/app/providers/model-provider";
 import { useDemoSeed } from "@/app/providers/seed-provider";
 import { aggregateStats } from "@/features/history-store/repository";
 import { DefectDistributionChart } from "@/widgets/defect-distribution-chart";
 import { RecentDetections } from "@/widgets/recent-detections";
 import { StatCard } from "@/widgets/stat-card";
 
-/** Map model phase to a human-readable delta label for the StatCard. */
-function inferenceLabel(phase: string): string {
-  switch (phase) {
-    case "fetching":
-      return "Downloading model…";
-    case "compiling":
-      return "Initializing engine…";
-    case "warming":
-      return "Warming up…";
-    case "ready":
-      return "Browser ONNX inference";
-    case "error":
-      return "Model unavailable";
-    default:
-      return "Browser WASM inference";
-  }
-}
-
 export function DashboardPage() {
-  // Subscribe-only: never call ensureReady() from Dashboard (D-G decision)
-  const modelStatus = useModelStatus();
   // Refetch once the demo seed finishes so the stats reflect newly inserted rows.
   const { status: seedStatus } = useDemoSeed();
   const { data: stats } = useRequest(aggregateStats, { refreshDeps: [seedStatus] });
@@ -49,13 +28,7 @@ export function DashboardPage() {
   const defectsFound = stats?.defectsFound ?? 0;
   const avgMs = stats?.avgInferenceMs ?? 0;
 
-  const defectRate =
-    totalInspections > 0
-      ? `${((defectsFound / totalInspections) * 100).toFixed(1)}% defect rate`
-      : "No data yet";
-
   const avgSeconds = avgMs > 0 ? `${(avgMs / 1000).toFixed(1)}s` : "—";
-  const processingDelta = inferenceLabel(modelStatus.phase);
 
   return (
     <main id="main-content" className="overflow-y-auto p-6">
@@ -77,8 +50,6 @@ export function DashboardPage() {
           icon={Wrench}
           value={totalInspections > 0 ? String(totalInspections) : "—"}
           label="Total Inspections"
-          delta={totalInspections > 0 ? `${totalInspections} records in store` : undefined}
-          deltaDirection="neutral"
           accentColor="oklch(0.72 0.18 55)"
         />
 
@@ -86,8 +57,6 @@ export function DashboardPage() {
           icon={TriangleAlert}
           value={defectsFound > 0 ? String(defectsFound) : "—"}
           label="Defects Found"
-          delta={defectRate}
-          deltaDirection="down"
           accentColor="oklch(0.5 0.22 25)"
         />
 
@@ -96,7 +65,6 @@ export function DashboardPage() {
           icon={Target}
           value="53.4%"
           label="Detection Accuracy"
-          deltaDirection="neutral"
           accentColor="oklch(0.62 0.16 80)"
         />
 
@@ -104,8 +72,6 @@ export function DashboardPage() {
           icon={Timer}
           value={avgSeconds}
           label="Avg Processing Time"
-          delta={processingDelta}
-          deltaDirection="neutral"
           accentColor="oklch(0.52 0.15 250)"
         />
       </div>
