@@ -9,6 +9,8 @@ import { type PluginOption, defineConfig } from "vite";
  * Copies onnxruntime-web WASM files to dist/ort/ so the runtime
  * `wasmPaths="/pipevision-ai/ort/"` lookup resolves. ORT 1.26 ships
  * only threaded variants; with numThreads=1 they run single-threaded.
+ * Each variant has a paired .mjs loader (e.g. jsep.mjs ↔ jsep.wasm) —
+ * both must be served from the same path or session create 404s.
  */
 function copyOrtWasm(): PluginOption {
   return {
@@ -18,10 +20,11 @@ function copyOrtWasm(): PluginOption {
       const src = path.resolve(__dirname, "node_modules/onnxruntime-web/dist");
       const dest = path.resolve(__dirname, "dist/ort");
       mkdirSync(dest, { recursive: true });
-      const wasms = readdirSync(src).filter(
-        (f) => f.startsWith("ort-wasm-simd-threaded") && f.endsWith(".wasm"),
+      const artifacts = readdirSync(src).filter(
+        (f) =>
+          f.startsWith("ort-wasm-simd-threaded") && (f.endsWith(".wasm") || f.endsWith(".mjs")),
       );
-      for (const f of wasms) {
+      for (const f of artifacts) {
         copyFileSync(path.join(src, f), path.join(dest, f));
       }
     },
