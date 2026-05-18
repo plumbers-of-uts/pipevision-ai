@@ -34,12 +34,13 @@ export function AppSidebar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 border-b border-border-default px-5 py-4">
-        <div
-          className="flex size-9 shrink-0 items-center justify-center rounded-md bg-accent text-fg-inverse text-lg font-bold"
-          aria-hidden="true"
-        >
-          P
-        </div>
+        <img
+          src={`${import.meta.env.BASE_URL}icon-192.png`}
+          alt=""
+          className="size-9 shrink-0 rounded-md border border-border-default bg-bg-base object-contain"
+          width={36}
+          height={36}
+        />
         <div className="min-w-0">
           <div className="truncate text-sm font-semibold text-fg-primary">PipeVision AI</div>
           <div className="truncate text-xs text-fg-secondary">Sewer Defect Detection</div>
