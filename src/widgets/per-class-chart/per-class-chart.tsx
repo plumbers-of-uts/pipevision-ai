@@ -1,6 +1,5 @@
 /**
  * per-class-chart.tsx — Horizontal recharts bar of mAP@0.5 per class (sorted desc).
- * Highlights worst 2 (Buckling, Joint offset) with severity-critical color band.
  * Numbers come from cnn-assignment3/model/per_class_metrics.csv (box, test split).
  */
 
@@ -10,23 +9,21 @@ import { Bar, BarChart, CartesianGrid, Cell, LabelList, Tooltip, XAxis, YAxis } 
 interface ClassData {
   name: string;
   map50: number;
-  worst: boolean;
 }
 
 const CLASS_DATA: ClassData[] = [
-  { name: "Utility intrusion", map50: 0.901, worst: false },
-  { name: "Hole", map50: 0.832, worst: false },
-  { name: "Obstacle", map50: 0.704, worst: false },
-  { name: "Debris", map50: 0.597, worst: false },
-  { name: "All (avg)", map50: 0.534, worst: false },
-  { name: "Crack", map50: 0.397, worst: false },
-  { name: "Joint offset", map50: 0.225, worst: true },
-  { name: "Buckling", map50: 0.08, worst: true },
+  { name: "Utility intrusion", map50: 0.901 },
+  { name: "Hole", map50: 0.832 },
+  { name: "Obstacle", map50: 0.704 },
+  { name: "Debris", map50: 0.597 },
+  { name: "All (avg)", map50: 0.534 },
+  { name: "Crack", map50: 0.397 },
+  { name: "Joint offset", map50: 0.225 },
+  { name: "Buckling", map50: 0.08 },
 ].sort((a, b) => b.map50 - a.map50);
 
 // DESIGN.md HSL tokens (avoid oklch — recharts SVG renders unreliably with oklch in some browsers)
 const ACCENT = "hsl(28, 92%, 52%)"; // --accent
-const CRITICAL = "hsl(0, 72%, 45%)"; // --severity-critical
 const GRID = "hsl(240, 5%, 88%)"; // --border-default
 const TICK = "hsl(220, 8%, 45%)"; // --fg-secondary
 const HOVER = "hsl(240, 4%, 93%)"; // --bg-elevated
@@ -36,21 +33,13 @@ function CustomTooltip({
   payload,
 }: { active?: boolean; payload?: Array<{ value: number; payload: ClassData }> }) {
   if (!active || !payload?.[0]) return null;
-  const { name, map50, worst } = payload[0].payload;
+  const { name, map50 } = payload[0].payload;
   return (
     <div className="rounded-lg border border-border-default bg-bg-surface px-3 py-2 shadow-md">
       <div className="text-[12px] font-semibold text-fg-primary">{name}</div>
       <div className="font-mono text-[13px] text-fg-secondary">
-        mAP@0.5:{" "}
-        <span className={worst ? "text-error font-bold" : "text-success font-bold"}>
-          {map50.toFixed(3)}
-        </span>
+        mAP@0.5: <span className="font-bold text-fg-primary">{map50.toFixed(3)}</span>
       </div>
-      {worst && (
-        <div className="mt-0.5 text-[11px] text-error">
-          Weakest class — candidate for improvement
-        </div>
-      )}
     </div>
   );
 }
@@ -101,11 +90,11 @@ export function PerClassChart() {
             tickLine={false}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: HOVER }} />
-          <Bar dataKey="map50" radius={[0, 3, 3, 0]} maxBarSize={22}>
+          <Bar dataKey="map50" radius={[0, 3, 3, 0]} maxBarSize={22} fill={ACCENT}>
             {CLASS_DATA.map((entry) => (
               <Cell
                 key={entry.name}
-                fill={entry.worst ? CRITICAL : ACCENT}
+                fill={ACCENT}
                 fillOpacity={entry.name === "All (avg)" ? 0.6 : 1}
               />
             ))}
@@ -117,26 +106,6 @@ export function PerClassChart() {
             />
           </Bar>
         </BarChart>
-      </div>
-
-      {/* Legend */}
-      <div className="mt-2 flex gap-4 text-[11px] text-fg-secondary">
-        <span className="flex items-center gap-1.5">
-          <span
-            className="inline-block size-2.5 rounded-sm"
-            style={{ background: ACCENT }}
-            aria-hidden="true"
-          />
-          mAP@0.5 score
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span
-            className="inline-block size-2.5 rounded-sm"
-            style={{ background: CRITICAL }}
-            aria-hidden="true"
-          />
-          Weakest classes (improvement candidates)
-        </span>
       </div>
     </div>
   );
