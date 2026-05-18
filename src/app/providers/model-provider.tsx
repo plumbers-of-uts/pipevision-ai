@@ -14,7 +14,7 @@
  * D13 preserved: no Web Workers.
  */
 
-import { type ReactNode, createContext, useCallback, useContext, useReducer } from "react";
+import { type ReactNode, createContext, useCallback, useContext, useReducer, useRef } from "react";
 
 import type { InferenceSession } from "onnxruntime-web";
 
@@ -183,6 +183,13 @@ interface ModelProviderProps {
 export function ModelProvider({ children }: ModelProviderProps) {
   const [status, dispatch] = useReducer(reducer, { phase: "idle" });
 
+  // Mirror the latest status into a ref so ensureReady() can stay referentially
+  // stable. Without this, ensureReady changes on every phase transition, which
+  // re-fires the consumer's useEffect and — on an "error" phase — restarts the
+  // whole load in a tight loop.
+  const statusRef = useRef(status);
+  statusRef.current = status;
+
   /**
    * Core load sequence. Shared across all concurrent ensureReady() callers.
    * integrityRetry=true means this is the second attempt after a cache bust.
@@ -307,13 +314,20 @@ export function ModelProvider({ children }: ModelProviderProps) {
   );
 
   const ensureReady = useCallback((): Promise<void> => {
-    if (status.phase === "ready") return Promise.resolve();
+    const current = statusRef.current;
+    if (current.phase === "ready") return Promise.resolve();
     if (ensureReadyPromise !== null) return ensureReadyPromise;
+    // Auto-load is one-shot per provider lifetime. Once a load has resolved to
+    // "error", further work must come from an explicit retry() — otherwise the
+    // consumer's useEffect dep change would re-enter loadModel forever.
+    if (current.phase === "error") {
+      return Promise.reject(new Error(current.reason));
+    }
     ensureReadyPromise = loadModel(false).finally(() => {
       ensureReadyPromise = null;
     });
     return ensureReadyPromise;
-  }, [status.phase, loadModel]);
+  }, [loadModel]);
 
   const retry = useCallback(
     (opts?: { bustCache?: boolean }): Promise<void> => {

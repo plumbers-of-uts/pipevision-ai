@@ -102,9 +102,12 @@ export function DetectPage() {
   const { ensureReady, retry } = useModelContext();
   const inference = useInference();
 
-  // Trigger model load on Detect page mount (only Detect triggers ensureReady — D-G)
+  // Trigger model load on Detect page mount (only Detect triggers ensureReady — D-G).
+  // Swallow rejection: error state is surfaced via modelStatus.phase === "error",
+  // and ensureReady rejects in that state to prevent an auto-retry loop. Explicit
+  // retry comes from the Retry button.
   useEffect(() => {
-    void ensureReady();
+    ensureReady().catch(() => {});
   }, [ensureReady]);
 
   // Revoke any outstanding object URL on unmount to avoid blob leaks.
