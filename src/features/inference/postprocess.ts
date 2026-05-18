@@ -1,15 +1,16 @@
 /**
  * postprocess.ts — YOLO output decoding and coordinate restoration.
  *
- * Handles both output layouts (auto-detected from tensor dims) for both
- * detection-only (`detect` task) and instance-segmentation (`segment` task):
- *   nc-first : [1, 4+nc(+nm), N]  — e.g. [1, 11, 8400] or [1, 43, 8400]
- *   nc-last  : [1, N, 4+nc(+nm)]  — e.g. [1, 8400, 11] or [1, 8400, 43]
+ * Handles three output layouts (auto-detected from tensor dims) across the
+ * `detect` and `segment` tasks:
+ *   nc-first      : [1, 4+nc(+nm), N]   raw YOLO head, channels-first
+ *   nc-last       : [1, N, 4+nc(+nm)]   raw YOLO head, channels-last
+ *   nms-included  : [1, max_det, 6(+nm)] end2end export (xyxy,conf,cls,coeffs)
  *
- * Box format from YOLO: cx, cy, w, h in *normalised* 640-space [0,1].
- * After decoding we convert to pixel coords in the original image space.
+ * Raw layouts give cx,cy,w,h in *normalised* 640-space [0,1]; the NMS-included
+ * layout emits xyxy in 640-pixel space and we convert to normalised cx/cy/w/h
+ * here so the downstream `unletterboxBoxes` path stays unchanged.
  *
- * Activation: sigmoid already applied (ORT FP16 → float32 conversion keeps scores in [0,1]).
  * NaN/Inf values are filtered out silently.
  */
 
@@ -25,10 +26,10 @@ export interface RawTensorView {
 
 /**
  * Detects the output layout from tensor dims.
- * Accepts both detection (4 + nc channels) and segmentation (4 + nc + nm channels) shapes.
  *
- *   nc-first: dims[1] === 4 + numClasses + maskChannels (columns = anchors)
- *   nc-last:  dims[2] === 4 + numClasses + maskChannels (rows = anchors)
+ *   nc-first      : dims[1] === 4 + numClasses (+maskChannels)
+ *   nc-last       : dims[2] === 4 + numClasses (+maskChannels)
+ *   nms-included  : dims[2] === 6 + maskChannels   (xyxy + conf + cls + coeffs)
  *
  * Pass maskChannels = 0 for detection-only models.
  */
@@ -37,12 +38,19 @@ export function detectLayout(
   numClasses: number,
   maskChannels = 0,
 ): OutputLayout {
+  if (dims.length !== 3) {
+    throw new Error(
+      `Unexpected output dims ${JSON.stringify(dims)} — need a 3D tensor for YOLO output.`,
+    );
+  }
   const colsDetect = 4 + numClasses;
   const colsSegment = colsDetect + maskChannels;
-  if (dims.length === 3 && (dims[1] === colsDetect || dims[1] === colsSegment)) return "nc-first";
-  if (dims.length === 3 && (dims[2] === colsDetect || dims[2] === colsSegment)) return "nc-last";
+  const colsNms = 6 + maskChannels;
+  if (dims[1] === colsDetect || dims[1] === colsSegment) return "nc-first";
+  if (dims[2] === colsDetect || dims[2] === colsSegment) return "nc-last";
+  if (dims[2] === colsNms || dims[2] === 6) return "nms-included";
   throw new Error(
-    `Unexpected output dims ${JSON.stringify(dims)} for numClasses=${numClasses}, maskChannels=${maskChannels}. Expected [1, 4+nc(+nm), N] or [1, N, 4+nc(+nm)].`,
+    `Unexpected output dims ${JSON.stringify(dims)} for numClasses=${numClasses}, maskChannels=${maskChannels}. Expected [1, 4+nc(+nm), N], [1, N, 4+nc(+nm)], or [1, max_det, 6(+nm)].`,
   );
 }
 
@@ -62,7 +70,12 @@ export function decodeYoloOutput(
   numClasses: number,
   layout: OutputLayout,
   maskChannels = 0,
+  inputSize = 640,
 ): InferenceRawWithCoeffs[] {
+  if (layout === "nms-included") {
+    return decodeNmsIncludedOutput(output, confThreshold, maskChannels, inputSize);
+  }
+
   const { data, dims } = output;
   const cols = 4 + numClasses + maskChannels;
 
@@ -120,6 +133,68 @@ export function decodeYoloOutput(
         const idx =
           layout === "nc-first" ? (4 + numClasses + k) * N + n : n * cols + 4 + numClasses + k;
         coeffs[k] = data[idx] ?? 0;
+      }
+      det.coeffs = coeffs;
+      det.bbox640Norm = { x: cx, y: cy, w, h };
+    }
+
+    detections.push(det);
+  }
+
+  return detections;
+}
+
+/**
+ * Decode an end-to-end (NMS-included) YOLO seg export.
+ *
+ *   dims: [1, max_det, 6 + maskChannels]
+ *   columns per row: [x1, y1, x2, y2, conf, classId, ...maskCoeffs]
+ *   coordinates are pixel-space in the model input (inputSize × inputSize).
+ *
+ * Padding rows beyond actual detections carry conf=0 and are dropped by the
+ * threshold check. The output bbox is converted to normalised cx/cy/w/h so the
+ * existing `unletterboxBoxes` path applies without modification.
+ */
+function decodeNmsIncludedOutput(
+  output: RawTensorView,
+  confThreshold: number,
+  maskChannels: number,
+  inputSize: number,
+): InferenceRawWithCoeffs[] {
+  const { data, dims } = output;
+  const maxDet = dims[1] ?? 0;
+  const cols = 6 + maskChannels;
+  const detections: InferenceRawWithCoeffs[] = [];
+
+  for (let i = 0; i < maxDet; i++) {
+    const base = i * cols;
+    const x1 = data[base] ?? 0;
+    const y1 = data[base + 1] ?? 0;
+    const x2 = data[base + 2] ?? 0;
+    const y2 = data[base + 3] ?? 0;
+    const conf = data[base + 4] ?? 0;
+    const clsRaw = data[base + 5] ?? 0;
+
+    if (!Number.isFinite(conf) || conf < confThreshold) continue;
+    if (!Number.isFinite(x1) || !Number.isFinite(y1)) continue;
+    if (!Number.isFinite(x2) || !Number.isFinite(y2)) continue;
+
+    const cx = (x1 + x2) / 2 / inputSize;
+    const cy = (y1 + y2) / 2 / inputSize;
+    const w = (x2 - x1) / inputSize;
+    const h = (y2 - y1) / inputSize;
+    if (w <= 0 || h <= 0) continue;
+
+    const det: InferenceRawWithCoeffs = {
+      classId: Math.max(0, Math.round(clsRaw)),
+      score: conf,
+      bbox: { x: cx, y: cy, w, h },
+    };
+
+    if (maskChannels > 0) {
+      const coeffs = new Float32Array(maskChannels);
+      for (let k = 0; k < maskChannels; k++) {
+        coeffs[k] = data[base + 6 + k] ?? 0;
       }
       det.coeffs = coeffs;
       det.bbox640Norm = { x: cx, y: cy, w, h };

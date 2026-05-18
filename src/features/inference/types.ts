@@ -21,7 +21,7 @@ export type ModelStatus =
 
 // ─── Output tensor layout ─────────────────────────────────────────────────────
 
-export type OutputLayout = "nc-first" | "nc-last";
+export type OutputLayout = "nc-first" | "nc-last" | "nms-included";
 
 export interface OutputContract {
   /** Detected from warming run dims: [1,4+nc(+nm),N] = nc-first, [1,N,4+nc(+nm)] = nc-last */

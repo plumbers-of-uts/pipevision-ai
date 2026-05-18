@@ -264,6 +264,7 @@ function createService(
       MODEL_CONFIG.numClasses,
       layout,
       maskChannels,
+      MODEL_CONFIG.inputSize,
     );
 
     // Invert letterbox transform (preserves coeffs / bbox640Norm for seg)

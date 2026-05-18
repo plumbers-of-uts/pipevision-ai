@@ -13,6 +13,11 @@ describe("detectLayout", () => {
     expect(detectLayout([1, 8400, 11], 7)).toBe("nc-last");
   });
 
+  it("detects nms-included when dims[2] === 6 + maskChannels", () => {
+    expect(detectLayout([1, 300, 38], 7, 32)).toBe("nms-included");
+    expect(detectLayout([1, 300, 6], 7, 0)).toBe("nms-included");
+  });
+
   it("throws on unexpected dims", () => {
     expect(() => detectLayout([1, 13, 8400], 7)).toThrow();
     expect(() => detectLayout([1, 8400], 7)).toThrow();
@@ -62,6 +67,42 @@ describe("decodeYoloOutput", () => {
     const data = new Float32Array([Number.NaN, cy, w, h, class0Score, class1Score]);
     const out = decodeYoloOutput({ data, dims: [1, 6, 1] }, 0.25, numClasses, "nc-first");
     expect(out).toEqual([]);
+  });
+
+  it("decodes nms-included seg output and converts xyxy(640px) → cxcywh(norm)", () => {
+    // One real detection + one padding row (conf 0).
+    // cols = 6 + 32 = 38, two rows → dims [1, 2, 38]
+    const inputSize = 640;
+    const cols = 6 + 32;
+    const data = new Float32Array(2 * cols);
+    // Row 0: x1=160, y1=160, x2=480, y2=480 → centre image, half-size box
+    data[0] = 160;
+    data[1] = 160;
+    data[2] = 480;
+    data[3] = 480;
+    data[4] = 0.9; // conf
+    data[5] = 3; // class id
+    // mask coeffs left as zeros — fine for this test.
+    // Row 1: padding — already zeros, conf=0 → dropped.
+
+    const out = decodeYoloOutput(
+      { data, dims: [1, 2, cols] },
+      0.25,
+      7,
+      "nms-included",
+      32,
+      inputSize,
+    );
+    expect(out).toHaveLength(1);
+    const det = out[0];
+    expect(det?.classId).toBe(3);
+    expect(det?.score).toBeCloseTo(0.9);
+    expect(det?.bbox.x).toBeCloseTo(0.5);
+    expect(det?.bbox.y).toBeCloseTo(0.5);
+    expect(det?.bbox.w).toBeCloseTo(320 / 640);
+    expect(det?.bbox.h).toBeCloseTo(320 / 640);
+    expect(det?.coeffs?.length).toBe(32);
+    expect(det?.bbox640Norm?.x).toBeCloseTo(0.5);
   });
 });
 
