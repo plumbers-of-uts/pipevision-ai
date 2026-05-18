@@ -5,7 +5,7 @@
  *   1. ModelProvider begins loading when user lands on Detect.
  *      Sample selection is available immediately even during model download (F1).
  *   2. "Run Detection" calls real ONNX inference via useInference().
- *   3. Results panel shows detections + pipe condition grade + accuracy disclaimer (F2).
+ *   3. Results panel shows detections + pipe condition grade.
  *   4. "Upload New" resets to dropzone state.
  *   5. If model loading or inference fails, an error card with optional Spaces
  *      fallback button is shown (T15 — button hidden when VITE_SPACES_URL absent).
@@ -15,7 +15,7 @@
  */
 
 import { useBoolean } from "ahooks";
-import { AlertTriangle, ArrowLeft, Info, Play, RefreshCw } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Play, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { getActiveSession, useModelContext, useModelStatus } from "@/app/providers/model-provider";
@@ -639,17 +639,9 @@ export function DetectPage() {
               </div>
             </div>
 
-            {/* Results panel + accuracy disclaimer (F2) */}
+            {/* Results panel */}
             <div className="flex flex-col gap-3">
               <DetectionResultPanel detections={detections} inferenceMs={inferenceMs} />
-
-              {/* F2 — accuracy calibration notice per D-I decision */}
-              <div className="flex items-start gap-2 rounded-lg border border-border-default bg-bg-surface px-3.5 py-3">
-                <Info className="mt-0.5 size-3.5 shrink-0 text-fg-tertiary" aria-hidden="true" />
-                <p className="text-[11px] leading-relaxed text-fg-tertiary">
-                  Demo accuracy: test mAP@0.5 (box) = 0.534 — may miss subtle defects.
-                </p>
-              </div>
             </div>
           </div>
         </div>
