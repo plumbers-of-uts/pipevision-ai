@@ -12,13 +12,10 @@ interface SampleGalleryProps {
 export function SampleGallery({ selectedId, onSelect, className }: SampleGalleryProps) {
   return (
     <section className={cn("flex flex-col gap-3", className)} aria-label="Sample inspection images">
-      <header className="flex items-baseline justify-between">
+      <header>
         <h3 className="text-[12px] font-semibold uppercase tracking-[0.5px] text-fg-secondary">
           Or try a sample frame
         </h3>
-        <span className="text-[11px] text-fg-tertiary">
-          {SAMPLE_CATALOG.length} real CCTV samples — one per defect class
-        </span>
       </header>
 
       <ul
