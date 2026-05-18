@@ -202,8 +202,8 @@ export function DetectPage() {
 
       const elapsed = Date.now() - startMs;
 
-      const annotatedThumb = await composeAnnotatedImage(sourceBlob, dets).catch((e) => {
-        console.warn("[DetectPage] Annotated thumbnail composition failed:", e);
+      const annotatedThumb = await composeAnnotatedImage(sourceBlob, dets).catch((err: unknown) => {
+        console.warn("[DetectPage] Annotated thumbnail composition failed:", err);
         return thumbUrl;
       });
 
@@ -259,8 +259,8 @@ export function DetectPage() {
       setImgHeight(bitmap.height);
       bitmap.close();
 
-      const annotatedThumb = await composeAnnotatedImage(sourceBlob, dets).catch((e) => {
-        console.warn("[DetectPage] Annotated thumbnail composition failed:", e);
+      const annotatedThumb = await composeAnnotatedImage(sourceBlob, dets).catch((err: unknown) => {
+        console.warn("[DetectPage] Annotated thumbnail composition failed:", err);
         return thumbUrl;
       });
 
