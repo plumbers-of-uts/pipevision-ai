@@ -264,16 +264,22 @@ export function ModelProvider({ children }: ModelProviderProps) {
         const ort = await getOrt();
 
         const executionProviders: string[] = backend === "webgpu" ? ["webgpu", "wasm"] : ["wasm"];
+        // Native ORT C++ logger severity (0=verbose, 1=info, 2=warning, 3=error).
+        // Lifted from default (2) so the VerifyEachNodeIsAssignedToAnEp WARN —
+        // benign but routed through console.error in the WASM bridge — stops
+        // rendering as a red entry in DevTools.
+        const sessionOptions = { executionProviders, logSeverityLevel: 3 } as const;
 
         let session: InferenceSession;
         try {
-          session = await ort.InferenceSession.create(buf, { executionProviders });
+          session = await ort.InferenceSession.create(buf, sessionOptions);
         } catch {
           if (backend === "webgpu") {
             // Automatically fall back to WASM on WebGPU session create failure
             try {
               session = await ort.InferenceSession.create(buf, {
                 executionProviders: ["wasm"],
+                logSeverityLevel: 3,
               });
             } catch (fallbackErr) {
               const e = new Error(
