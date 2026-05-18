@@ -96,7 +96,6 @@ export function DashboardPage() {
           icon={Target}
           value="53.4%"
           label="Detection Accuracy"
-          subtitle="Test mAP@0.5 (box)"
           deltaDirection="neutral"
           accentColor="oklch(0.62 0.16 80)"
         />

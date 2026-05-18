@@ -75,7 +75,6 @@ export function StatCard({
         {label}
       </div>
 
-      {/* Subtitle (static note, e.g., "PDF benchmark") */}
       {subtitle && <div className="mt-1 text-[11px] text-fg-tertiary">{subtitle}</div>}
 
       {/* Delta */}
