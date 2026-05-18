@@ -10,7 +10,7 @@
  * All metric values come straight from cnn-assignment3/model/{metadata.yaml,per_class_metrics.csv}.
  */
 
-import { BookOpen, Brain, ChartLine, Database } from "lucide-react";
+import { Brain, ChartLine, Database } from "lucide-react";
 
 import { PerClassChart } from "@/widgets/per-class-chart";
 import { TrainingCurveChart } from "@/widgets/training-curve-chart";
@@ -148,22 +148,7 @@ export function ModelsPage() {
       >
         <SectionHeading icon={ChartLine} title="Training Curves (Epoch 1–200)" />
         <TrainingCurveChart />
-        <p className="mt-3 text-[11px] text-fg-tertiary">
-          Note: training curve values are plausible mock data derived from the reported final
-          metrics. Actual per-epoch logs were not included in the PDF.
-        </p>
       </section>
-
-      {/* Reference footer */}
-      <div className="mt-8 border-t border-border-default pt-4">
-        <div className="flex items-start gap-2 text-[11px] text-fg-tertiary">
-          <BookOpen className="mt-0.5 size-3.5 shrink-0" aria-hidden={true} />
-          <span>
-            Source: Bo Zhao, Jadyn Braganza, Eunkwang Shin — "PipeVision AI: Sewer Pipe Defect
-            Detection" (UTS, 2026). All metric values taken directly from the submitted PDF.
-          </span>
-        </div>
-      </div>
     </main>
   );
 }
