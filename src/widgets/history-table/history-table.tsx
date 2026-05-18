@@ -103,7 +103,6 @@ export function HistoryTable({
                   "ID",
                   "Detections",
                   "Severity",
-                  "Model",
                   "Inf. Time",
                   "Actions",
                 ].map((h) => (
@@ -120,7 +119,7 @@ export function HistoryTable({
             <tbody>
               {records.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-sm text-fg-tertiary">
+                  <td colSpan={7} className="py-12 text-center text-sm text-fg-tertiary">
                     No records match the current filters.
                   </td>
                 </tr>
@@ -205,13 +204,6 @@ export function HistoryTable({
                         )}
                       >
                         {style.label}
-                      </span>
-                    </td>
-
-                    {/* Model version */}
-                    <td className="px-3.5 py-3 align-middle">
-                      <span className="rounded border border-border-default bg-bg-elevated px-1.5 py-0.5 font-mono text-[10px] text-fg-secondary">
-                        {record.modelVersion}
                       </span>
                     </td>
 
