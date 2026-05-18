@@ -42,10 +42,10 @@ function getPillConfig(status: ModelStatus): PillConfig {
     case "ready":
       return {
         dotClass: "bg-success shadow-[0_0_6px_currentColor] text-success",
-        label: `Model: ${status.backend === "webgpu" ? "WebGPU" : "WASM"}`,
+        label: `Ready · ${status.backend === "webgpu" ? "WebGPU" : "WASM"}`,
       };
     case "error":
-      return { dotClass: "bg-error", label: "Model: Error" };
+      return { dotClass: "bg-error", label: "Error" };
   }
 }
 
