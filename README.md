@@ -1,6 +1,6 @@
 # PipeVision AI
 
-Sewer pipe defect detection web app, built around a YOLO26m model trained on the Roboflow Sewage Defect Detection dataset.
+Sewer pipe defect detection web app, built around a YOLO26m-seg model trained on the Roboflow Sewage Defect Detection dataset.
 
 **Project #37 · Plumbers of UTS · 42028 Deep Learning and CNN**
 
@@ -25,31 +25,29 @@ Live at https://plumbers-of-uts.github.io/pipevision-ai/
 
 ## Status
 
-Browser inference is fully wired. The Detect page runs real `onnxruntime-web` against an HF Hub–hosted FP16 ONNX model, with a 5-phase loading state machine, Serwist service worker caching, SHA-256 integrity verification, and a manual Hugging Face Spaces fallback button for failure recovery.
+Browser inference is fully wired. The Detect page runs real `onnxruntime-web` against an HF Hub–hosted FP16 ONNX model with NMS-included export, a 5-phase loading state machine (idle → fetching → compiling → warming → ready), Serwist service-worker caching, SHA-256 integrity verification, fp16 input/output conversion, and a manual Hugging Face Spaces fallback button for failure recovery.
 
-To actually run the demo end-to-end, two pieces of configuration are required:
+To run the demo end-to-end, two pieces of build-time configuration are required:
 
 1. `VITE_MODEL_URL` — public URL of the ONNX model on Hugging Face Hub
-2. `VITE_MODEL_SHA256` — SHA-256 hex of the ONNX file (for integrity verification + cache invalidation)
+2. `VITE_MODEL_SHA256` — SHA-256 hex of the ONNX file (integrity verification + cache invalidation)
 
-Without those, the app builds and renders the UI but the Detect page surfaces a clear `Model URL is not configured` error rather than silently failing. See [Configuration](#configuration).
+Without these, the app builds and renders the UI but the Detect page shows a clear `Model URL is not configured` error rather than failing silently. See [Configuration](#configuration).
 
 ## Test Set Performance
 
-Numbers below are from the original training run reported in the team's initial experiment write-up. They are the values the demo claims to reproduce once the export pipeline is run.
+Numbers below come from `model/metadata.yaml` (the post-training export the demo serves).
 
-| Metric | Value |
-|---|---|
-| mAP@0.5 | 0.440 |
-| mAP@0.5:0.95 | 0.198 |
-| Best epoch | 57 / 100 |
-| Model size after FP16 export | ~44 MB |
+| Metric | Box | Mask |
+|---|---|---|
+| mAP@0.5 | 0.534 | 0.475 |
+| mAP@0.5:0.95 | 0.302 | 0.271 |
 
-Per-class mAP@0.5 ranges from 0.708 (Utility intrusion) to 0.196 (Joint offset). The Model Info page lists the full per-class table and six planned follow-up experiments.
+Best checkpoint at epoch 114 / 200; FP16 ONNX is ~45 MB. Per-class mAP@0.5 (box) ranges from 0.901 (Utility intrusion) down to 0.080 (Buckling) — see the Model Info page for the full per-class table and chart.
 
 ### Defect Classes
 
-Crack · Joint offset · Utility intrusion · Debris · Obstacle · Buckling · Hole
+Buckling · Crack · Debris · Hole · Joint offset · Obstacle · Utility intrusion
 
 ---
 
@@ -63,7 +61,7 @@ Crack · Joint offset · Utility intrusion · Debris · Obstacle · Buckling · 
 | Local storage | Dexie (IndexedDB), seeded on first launch |
 | Charts | recharts |
 | Inference | onnxruntime-web 1.26 (WebGPU EP → WASM SIMD fallback, single-threaded) |
-| Model hosting | Hugging Face Hub (FP16 ONNX) |
+| Model hosting | Hugging Face Hub (FP16 ONNX, NMS-included seg export) |
 | Service worker | Serwist (`src/sw.ts`) — precache app shell + cache-first for ONNX + ORT WASM |
 | Fallback | Hugging Face Spaces (Gradio) — manual button, structured JSON detections |
 | Tests | Vitest (`src/features/inference/__tests__/`) |
@@ -87,7 +85,7 @@ cp .env.example .env.local
 mise run dev
 ```
 
-The dev server is at http://localhost:5173/pipevision-ai/. On first load, IndexedDB is populated with 50 demo records so the Dashboard, History, and Models pages have content immediately.
+The dev server is at http://localhost:5173/pipevision-ai/. On first load, IndexedDB is populated with demo records so the Dashboard, History, and Models pages have content immediately.
 
 Other tasks:
 
@@ -96,7 +94,7 @@ mise run build       # type-check + production build
 mise run lint        # biome check
 mise run format      # biome format --write
 mise run typecheck   # tsc --noEmit
-bun run test         # vitest unit tests for postprocess + NMS
+bun run test         # vitest unit tests for postprocess + NMS + fp16 codec
 ```
 
 ## Configuration
@@ -105,19 +103,19 @@ The Detect page expects two environment variables at build time. The build will 
 
 | Variable | Required | Description |
 |---|---|---|
-| `VITE_MODEL_URL` | yes | Public URL of the ONNX FP16 model on Hugging Face Hub. e.g. `https://huggingface.co/<user>/pipevision-yolo26m/resolve/main/yolo26m-fp16.onnx` |
+| `VITE_MODEL_URL` | yes | Public URL of the ONNX FP16 model on Hugging Face Hub. e.g. `https://huggingface.co/<user>/pipevision-yolo26m-seg/resolve/main/yolo26m-seg-fp16.onnx` |
 | `VITE_MODEL_SHA256` | yes (production) | SHA-256 hex of the ONNX file. Doubles as the Service Worker cache-busting key (`?v=<first 8 hex>`). Leave blank in dev to skip integrity verification. |
 | `VITE_SPACES_URL` | optional | Hugging Face Spaces URL for the Gradio fallback. When blank, the "Try Hugging Face Spaces fallback" button is hidden. |
 
-For local development, copy `.env.example` to `.env.local` and fill in the values. For CI deployment via GitHub Actions, configure the variables as repository **Secrets** (`VITE_MODEL_URL`, `VITE_MODEL_SHA256`) and **Variables** (`VITE_SPACES_URL`) under *Settings → Secrets and variables → Actions*. The `deploy.yml` workflow already wires these into the build step.
+For local development, copy `.env.example` to `.env.local` and fill in the values. For CI deployment via GitHub Actions, configure the variables as repository **Secrets** (`VITE_MODEL_URL`, `VITE_MODEL_SHA256`) and **Variables** (`VITE_SPACES_URL`) under *Settings → Secrets and variables → Actions*. The workflow at [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) already wires these into the build step.
 
 ### Detect page demo flow
 
 1. Open `/detect`.
 2. Click a sample image, or drop your own (JPEG / PNG / WebP).
 3. Click **Run Detection**. The model loads on first use (status pill in the sidebar shows progress); subsequent visits hit the Service Worker cache.
-4. Bounding boxes are drawn directly on the original image, with per-defect class, severity, and confidence in the result panel.
-5. Each run is saved to IndexedDB and visible from the Dashboard and History pages. `modelVersion` distinguishes local (`yolo26m-pipevision-fp16`) and Spaces fallback (`yolo26m-pipevision-fp16-spaces`) results.
+4. Bounding boxes and instance masks are drawn directly on the original image, with per-defect class, severity, and confidence in the result panel.
+5. Each run is saved to IndexedDB and visible from the Dashboard and History pages.
 
 If the model fetch or inference fails and `VITE_SPACES_URL` is set, the error card offers a one-click Spaces fallback that hits the Gradio API instead — same `Detection[]` shape, different `modelVersion`.
 
@@ -139,15 +137,16 @@ pipevision-ai/
 │   ├── pyproject.toml
 │   └── usage.md                    # step-by-step runbook
 ├── src/
-│   ├── app/                        # router + providers
+│   ├── app/                        # router + providers (ModelProvider, Theme, Seed)
 │   ├── pages/                      # dashboard, detect, history, models
 │   ├── widgets/                    # page-level composition components
 │   ├── features/
+│   │   ├── inference/              # ORT session, pre/postprocess, NMS, mask decode
 │   │   ├── history-store/          # Dexie schema, repository, seed
-│   │   ├── samples/
-│   │   └── export/
+│   │   ├── samples/                # bundled CCTV sample images
+│   │   └── export/                 # PNG/CSV/JSON export of history
 │   ├── components/ui/              # shadcn primitives
-│   ├── lib/
+│   ├── lib/onnx/                   # ORT loader, fp16 codec, SW register
 │   └── styles/globals.css
 ├── .github/workflows/deploy.yml
 ├── DESIGN.md                       # design tokens
@@ -170,19 +169,19 @@ Required environment variables:
 | `AWS_PROFILE` | AWS CLI profile (defaults to `default`) |
 | `HF_USER` | Hugging Face username |
 | `HF_TOKEN` | HF token with write access (or run `huggingface-cli login`) |
-| `VAL_DATASET_YAML` | Absolute path to the Roboflow `data.yaml` |
+| `VAL_DATASET_YAML` | Absolute path to the Roboflow Ultralytics dataset config produced by Roboflow's "Export → YOLO" flow |
 
 Then:
 
 ```bash
 uv sync --project model
 mise run model:download   # S3 → model/artifacts/best.pt
-mise run model:export     # → model/artifacts/yolo26m-fp16.onnx
+mise run model:export     # → model/artifacts/yolo26m-seg-fp16.onnx
 mise run model:verify     # PASS if |Δ mAP@0.5| < 0.005
-mise run model:upload     # → huggingface.co/<HF_USER>/pipevision-yolo26m
+mise run model:upload     # → huggingface.co/<HF_USER>/pipevision-yolo26m-seg
 ```
 
-After upload, point the frontend at the model URL via `VITE_MODEL_URL` (or update `src/shared/config/env.ts`). Full instructions in [`model/usage.md`](model/usage.md).
+After upload, point the frontend at the model URL via `VITE_MODEL_URL`; runtime parsing lives in [`src/features/inference/model-config.ts`](src/features/inference/model-config.ts). Full instructions in [`model/usage.md`](model/usage.md).
 
 ---
 
@@ -190,16 +189,15 @@ After upload, point the frontend at the model URL via `VITE_MODEL_URL` (or updat
 
 Code-wise the demo is complete. To actually run it you need:
 
-- [ ] Hugging Face Hub account + write token; run the four `model:*` tasks below to publish the ONNX model.
+- [ ] Hugging Face Hub account + write token; run the four `model:*` tasks above to publish the ONNX model.
 - [ ] Set `VITE_MODEL_URL` and `VITE_MODEL_SHA256` (see [Configuration](#configuration)).
-- [ ] (Optional) Deploy the Gradio fallback to Hugging Face Spaces using `spaces/app.py` (spec in `docs/plans/work/001-browser-inference-finalization.md`), then set `VITE_SPACES_URL`.
+- [ ] (Optional) Deploy a Gradio Spaces fallback and set `VITE_SPACES_URL`.
 
-Backlog tracked in `docs/plans/work/001-browser-inference-finalization.md` and the QA review at `.agents/results/qa-review-browser-inference-001.md`:
+Tracked in [`docs/plans/work/001-browser-inference-finalization.md`](docs/plans/work/001-browser-inference-finalization.md) and [`docs/plans/work/tech-debt-tracker.md`](docs/plans/work/tech-debt-tracker.md):
 
-- Playwright E2E (`detect.spec.ts`) — deferred from this sprint.
-- Background model prefetch on the Dashboard route, Web Worker inference (currently D13 deferred), INT8 quantization for mobile, i18n (Korean/English), opt-in anonymous telemetry, video and live-camera support.
-- Reduce bundle: the 26 MB `ort-wasm-simd-threaded.jsep.wasm` shipped by ORT 1.26 cannot currently be excluded without breaking the runtime (`numThreads=1` still requires the threaded build).
-- Six experiments listed in the original write-up to push mAP above 0.44: Mosaic and crop augmentation, class-balanced sampling with Focal Loss, CBAM or Deformable Attention, FPN/PAN with Task-Aligned Label Assignment, extended training to epoch 200, and a Faster R-CNN comparison baseline.
+- Playwright E2E coverage of the Detect flow.
+- Background model prefetch on the Dashboard route, Web Worker inference (currently main-thread only), INT8 quantization for mobile, i18n (Korean/English), opt-in anonymous telemetry, video and live-camera support.
+- Bundle: the 26 MB `ort-wasm-simd-threaded.jsep.wasm` shipped by ORT 1.26 cannot currently be excluded without breaking the runtime (`numThreads=1` still requires the threaded build).
 
 ---
 
