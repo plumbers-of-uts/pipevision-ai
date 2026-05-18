@@ -40,9 +40,9 @@ interface RecentDetectionsProps {
 }
 
 export function RecentDetections({ refreshKey }: RecentDetectionsProps = {}) {
-  const { status: seedStatus } = useDemoSeed();
+  const { status: seedStatus, thumbnailBake } = useDemoSeed();
   const { data: records = [], loading } = useRequest(() => recent(6), {
-    refreshDeps: [seedStatus, refreshKey],
+    refreshDeps: [seedStatus, thumbnailBake, refreshKey],
   });
   const [viewRecord, setViewRecord] = useState<HistoryRecord | null>(null);
 

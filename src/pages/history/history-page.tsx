@@ -14,6 +14,7 @@
 import { useRequest } from "ahooks";
 import { useState } from "react";
 
+import { useDemoSeed } from "@/app/providers/seed-provider";
 import { exportToCsv } from "@/features/export/csv-exporter";
 import { list } from "@/features/history-store/repository";
 import type { Severity } from "@/features/history-store/types";
@@ -36,6 +37,7 @@ function defaultFilters(): HistoryFilters {
 export function HistoryPage() {
   const [filters, setFilters] = useState<HistoryFilters>(defaultFilters);
   const [page, setPage] = useState(1);
+  const { thumbnailBake } = useDemoSeed();
 
   // useRequest re-runs whenever filters or page change. refresh() forces a re-fetch.
   const {
@@ -68,7 +70,7 @@ export function HistoryPage() {
         : items;
       return { items: searched, total: t };
     },
-    { refreshDeps: [filters, page] },
+    { refreshDeps: [filters, page, thumbnailBake] },
   );
 
   const records = data?.items ?? [];

@@ -16,14 +16,22 @@
 
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from "react";
 
+import { bakeLegacyThumbnails } from "@/features/history-store/migrate-thumbnails";
 import { seedIfEmpty } from "@/features/history-store/seed";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SeedStatus = "pending" | "seeded" | "skipped" | "error";
+type ThumbnailBakeStatus = "pending" | "running" | "done" | "error";
 
 interface SeedContextValue {
   status: SeedStatus;
+  /**
+   * Tracks the one-shot thumbnail migration that bakes detection overlays
+   * into legacy records. Widgets that render thumbnails can include this in
+   * their refresh dependencies so the list refreshes once baking finishes.
+   */
+  thumbnailBake: ThumbnailBakeStatus;
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -44,6 +52,7 @@ interface SeedProviderProps {
  */
 export function SeedProvider({ children }: SeedProviderProps) {
   const [status, setStatus] = useState<SeedStatus>("pending");
+  const [thumbnailBake, setThumbnailBake] = useState<ThumbnailBakeStatus>("pending");
 
   const runSeed = useCallback(async () => {
     try {
@@ -51,6 +60,18 @@ export function SeedProvider({ children }: SeedProviderProps) {
       setStatus(result.skipped ? "skipped" : "seeded");
     } catch {
       setStatus("error");
+    }
+
+    // Bake annotated thumbnails for any rows still on the legacy raw-image
+    // format. Runs serially after seeding so a freshly-seeded store gets its
+    // overlays too. Failures here are non-fatal — the raw thumbnail stays.
+    setThumbnailBake("running");
+    try {
+      await bakeLegacyThumbnails();
+      setThumbnailBake("done");
+    } catch (err) {
+      console.warn("[SeedProvider] thumbnail bake migration failed", err);
+      setThumbnailBake("error");
     }
   }, []);
 
@@ -71,7 +92,7 @@ export function SeedProvider({ children }: SeedProviderProps) {
     return () => clearTimeout(timer);
   }, [runSeed]);
 
-  return <SeedContext.Provider value={{ status }}>{children}</SeedContext.Provider>;
+  return <SeedContext.Provider value={{ status, thumbnailBake }}>{children}</SeedContext.Provider>;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -80,7 +101,7 @@ export function SeedProvider({ children }: SeedProviderProps) {
  * useDemoSeed — returns the current seeding status.
  * Must be used within a SeedProvider subtree.
  */
-export function useDemoSeed(): { status: SeedStatus } {
+export function useDemoSeed(): SeedContextValue {
   const ctx = useContext(SeedContext);
   if (ctx === null) {
     throw new Error("useDemoSeed must be used within a SeedProvider");
