@@ -40,6 +40,12 @@ interface ManifestDetection {
   classId: number;
   confidence: number;
   bbox: { x: number; y: number; w: number; h: number };
+  /**
+   * Optional binary instance mask serialised as a PNG data URL.
+   * Present when the seed manifest was produced by a segmentation model
+   * (`seed_history_inferences.py` emits this from `result.masks`).
+   */
+  maskPng?: string;
 }
 
 interface ManifestRecord {
@@ -99,6 +105,7 @@ function toDetection(raw: ManifestDetection): Detection | null {
     confidence: raw.confidence,
     bbox: raw.bbox,
     color: cls.color,
+    ...(raw.maskPng !== undefined ? { maskPng: raw.maskPng } : {}),
   };
 }
 
@@ -137,20 +144,27 @@ export interface SeedResult {
 }
 
 export async function seedIfEmpty(): Promise<SeedResult> {
-  const count = await db.records.count();
-  if (count > 0) return { inserted: 0, skipped: true };
+  // Seed when:
+  //   - the store is completely empty (first launch), or
+  //   - the store has user records but no rows from the current seed manifest
+  //     (e.g., db v3 just wiped the detect-only seed and we want the seg seed).
+  // User-saved inspections carry modelVersion `...-webgpu` / `...-wasm`, so
+  // counting only the bare seed modelVersion isolates seed rows.
+  const manifest = await fetchManifest();
+  const seedCount = await db.records.where("modelVersion").equals(manifest.modelVersion).count();
+  if (seedCount > 0) return { inserted: 0, skipped: true };
 
-  const inserted = await insertSeedRecords();
+  const inserted = await insertSeedRecordsFromManifest(manifest);
   return { inserted, skipped: false };
 }
 
 export async function reseedDemo(): Promise<number> {
   await db.records.clear();
-  return insertSeedRecords();
+  const manifest = await fetchManifest();
+  return insertSeedRecordsFromManifest(manifest);
 }
 
-async function insertSeedRecords(): Promise<number> {
-  const manifest = await fetchManifest();
+async function insertSeedRecordsFromManifest(manifest: SeedManifest): Promise<number> {
   const nowMs = Date.now();
   const total = manifest.records.length;
 

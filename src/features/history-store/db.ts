@@ -72,6 +72,26 @@ class PipeVisionDatabase extends Dexie {
           .filter((r) => r.thumbnailDataUrl?.startsWith("data:image/svg") ?? false)
           .delete();
       });
+
+    /**
+     * Version 3 — drop the detect-only seed (modelVersion exactly
+     * "yolo26m-pipevision-fp16"). The seed manifest now ships from the seg
+     * model with maskPng baked in, so the old mask-less rows have to go
+     * before `seedIfEmpty` can reinsert the new manifest. User-saved
+     * inspections carry a backend suffix (e.g. "...-webgpu", "...-wasm") so
+     * they are not touched.
+     */
+    this.version(3)
+      .stores({
+        records: "id, createdAt, modelVersion, *detections.classId",
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<HistoryRecord, string>("records")
+          .where("modelVersion")
+          .equals("yolo26m-pipevision-fp16")
+          .delete();
+      });
   }
 }
 
