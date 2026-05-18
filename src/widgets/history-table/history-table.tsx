@@ -22,6 +22,7 @@ import { deleteById } from "@/features/history-store/repository";
 import type { HistoryRecord } from "@/features/history-store/types";
 import { formatDateTime } from "@/lib/relative-time";
 import { cn } from "@/lib/utils";
+import { InspectionDetailDialog } from "@/widgets/inspection-detail-dialog";
 
 type Severity = "critical" | "high" | "medium" | "low";
 
@@ -309,73 +310,12 @@ export function HistoryTable({
       </div>
 
       {/* View Detail Dialog */}
-      {viewRecord && (
-        <Dialog
-          open
-          onOpenChange={(open) => {
-            if (!open) setViewRecord(null);
-          }}
-        >
-          <DialogContent className="max-w-lg bg-bg-surface">
-            <DialogHeader>
-              <DialogTitle>Inspection Detail</DialogTitle>
-              <DialogDescription>
-                Record ID: <span className="font-mono">{viewRecord.id}</span>
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="flex gap-4">
-              <img
-                src={viewRecord.thumbnailDataUrl}
-                alt="Inspection thumbnail"
-                className="size-24 rounded object-cover"
-              />
-              <div className="flex flex-col gap-1.5 text-sm">
-                <div>
-                  <span className="text-fg-tertiary">Date:</span>{" "}
-                  {formatDateTime(viewRecord.createdAt).date}{" "}
-                  {formatDateTime(viewRecord.createdAt).time}
-                </div>
-                <div>
-                  <span className="text-fg-tertiary">Model:</span>{" "}
-                  <span className="font-mono">{viewRecord.modelVersion}</span>
-                </div>
-                <div>
-                  <span className="text-fg-tertiary">Inference:</span>{" "}
-                  {(viewRecord.inferenceMs / 1000).toFixed(2)}s
-                </div>
-                <div>
-                  <span className="text-fg-tertiary">Detections:</span>{" "}
-                  {viewRecord.detections.length}
-                </div>
-              </div>
-            </div>
-
-            {viewRecord.detections.length > 0 && (
-              <div className="mt-2">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-fg-tertiary">
-                  Detections
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  {viewRecord.detections.map((det) => (
-                    <div
-                      key={det.id}
-                      className="flex items-center justify-between rounded border border-border-default bg-bg-elevated px-3 py-2 text-sm"
-                    >
-                      <span className="font-medium text-fg-primary">{det.className}</span>
-                      <span className="font-mono text-fg-secondary">
-                        {(det.confidence * 100).toFixed(1)}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <DialogFooter showCloseButton>{null}</DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      <InspectionDetailDialog
+        record={viewRecord}
+        onOpenChange={(open) => {
+          if (!open) setViewRecord(null);
+        }}
+      />
 
       {/* Confirm Delete Dialog */}
       {confirmDeleteId && (

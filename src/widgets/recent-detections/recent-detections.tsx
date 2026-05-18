@@ -5,12 +5,14 @@
  */
 
 import { useRequest } from "ahooks";
+import { useState } from "react";
 
 import { useDemoSeed } from "@/app/providers/seed-provider";
 import { recent } from "@/features/history-store/repository";
 import type { HistoryRecord } from "@/features/history-store/types";
 import { relativeTime } from "@/lib/relative-time";
 import { cn } from "@/lib/utils";
+import { InspectionDetailDialog } from "@/widgets/inspection-detail-dialog";
 
 type Severity = "critical" | "high" | "medium" | "low";
 
@@ -42,6 +44,7 @@ export function RecentDetections({ refreshKey }: RecentDetectionsProps = {}) {
   const { data: records = [], loading } = useRequest(() => recent(6), {
     refreshDeps: [seedStatus, refreshKey],
   });
+  const [viewRecord, setViewRecord] = useState<HistoryRecord | null>(null);
 
   if (loading) {
     return (
@@ -70,53 +73,67 @@ export function RecentDetections({ refreshKey }: RecentDetectionsProps = {}) {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-3" role="list" aria-label="Recent detections">
-      {records.map((record) => {
-        const sev = topSeverity(record);
-        const style = SEV_STYLES[sev];
-        const topDet = record.detections[0];
+    <>
+      <ul className="grid list-none grid-cols-3 gap-3 p-0" aria-label="Recent detections">
+        {records.map((record) => {
+          const sev = topSeverity(record);
+          const style = SEV_STYLES[sev];
+          const topDet = record.detections[0];
 
-        return (
-          <article
-            key={record.id}
-            role="listitem"
-            className="group cursor-pointer overflow-hidden rounded border border-border-default transition-colors hover:border-accent"
-          >
-            {/* Thumbnail */}
-            <div className="relative aspect-[4/3] overflow-hidden bg-bg-base">
-              <img
-                src={record.thumbnailDataUrl}
-                alt={topDet ? `${topDet.className} detection` : "Clean pipe inspection"}
-                className="size-full object-cover"
-                loading="lazy"
-              />
-            </div>
-
-            {/* Info row */}
-            <div className="flex items-center justify-between bg-bg-elevated px-2.5 py-2">
-              <div className="min-w-0">
-                <div className="truncate text-[11px] font-semibold text-fg-primary">
-                  {topDet?.className ?? "Clean"}
-                  {topDet && (
-                    <span className="ml-1 font-mono text-[10px] text-fg-tertiary">
-                      {(topDet.confidence * 100).toFixed(0)}%
-                    </span>
-                  )}
-                </div>
-                <div className="text-[10px] text-fg-tertiary">{relativeTime(record.createdAt)}</div>
-              </div>
-              <span
-                className={cn(
-                  "ml-2 shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.3px]",
-                  style.badge,
-                )}
+          return (
+            <li key={record.id}>
+              <button
+                type="button"
+                onClick={() => setViewRecord(record)}
+                aria-label={`View details for ${topDet?.className ?? "clean"} inspection from ${relativeTime(record.createdAt)}`}
+                className="group block w-full cursor-pointer overflow-hidden rounded border border-border-default text-left transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
               >
-                {style.label}
-              </span>
-            </div>
-          </article>
-        );
-      })}
-    </div>
+                {/* Thumbnail */}
+                <div className="relative aspect-[4/3] overflow-hidden bg-bg-base">
+                  <img
+                    src={record.thumbnailDataUrl}
+                    alt={topDet ? `${topDet.className} detection` : "Clean pipe inspection"}
+                    className="size-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+
+                {/* Info row */}
+                <div className="flex items-center justify-between bg-bg-elevated px-2.5 py-2">
+                  <div className="min-w-0">
+                    <div className="truncate text-[11px] font-semibold text-fg-primary">
+                      {topDet?.className ?? "Clean"}
+                      {topDet && (
+                        <span className="ml-1 font-mono text-[10px] text-fg-tertiary">
+                          {(topDet.confidence * 100).toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-fg-tertiary">
+                      {relativeTime(record.createdAt)}
+                    </div>
+                  </div>
+                  <span
+                    className={cn(
+                      "ml-2 shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.3px]",
+                      style.badge,
+                    )}
+                  >
+                    {style.label}
+                  </span>
+                </div>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <InspectionDetailDialog
+        record={viewRecord}
+        onOpenChange={(open) => {
+          if (!open) setViewRecord(null);
+        }}
+      />
+    </>
   );
 }
