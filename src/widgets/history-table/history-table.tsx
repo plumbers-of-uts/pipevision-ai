@@ -141,10 +141,13 @@ export function HistoryTable({
                       <div className="font-mono text-[11px] text-fg-tertiary">{dt.time}</div>
                     </td>
 
-                    {/* Thumbnail */}
+                    {/* Thumbnail (click to open detail) */}
                     <td className="px-3.5 py-3 align-middle">
-                      <div
-                        className="size-[38px] shrink-0 overflow-hidden rounded border border-border-default bg-bg-base"
+                      <button
+                        type="button"
+                        onClick={() => setViewRecord(record)}
+                        aria-label={`View details for record ${record.id.slice(0, 8)}`}
+                        className="block size-[38px] shrink-0 overflow-hidden rounded border border-border-default bg-bg-base transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
                         style={{ width: 52 }}
                       >
                         <img
@@ -155,7 +158,7 @@ export function HistoryTable({
                           width={52}
                           height={38}
                         />
-                      </div>
+                      </button>
                     </td>
 
                     {/* ID */}

@@ -2,31 +2,20 @@
  * history-page.tsx — Inspection History page.
  *
  * Assembles:
- *   - HistoryFilterBar (search, date range, class/severity select, Export CSV, Reset Demo)
+ *   - HistoryFilterBar (search, date range, class/severity select, Export CSV)
  *   - HistoryTable (paginated table with thumbnail, badges, delete/view actions)
  *
  * Pagination: 10 records/page. Filters applied via list() from repository.
  * "Export CSV" downloads current filtered result set (all pages).
- * "Reset Demo" confirms with Dialog then calls reseedDemo().
  *
  * Matches gui-mockup.html #page-history (lines 1177-1324).
  */
 
-import { useBoolean, useRequest } from "ahooks";
+import { useRequest } from "ahooks";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { exportToCsv } from "@/features/export/csv-exporter";
 import { list } from "@/features/history-store/repository";
-import { reseedDemo } from "@/features/history-store/seed";
 import type { Severity } from "@/features/history-store/types";
 import { HistoryFilterBar } from "@/widgets/history-filter-bar";
 import type { HistoryFilters } from "@/widgets/history-filter-bar";
@@ -47,9 +36,6 @@ function defaultFilters(): HistoryFilters {
 export function HistoryPage() {
   const [filters, setFilters] = useState<HistoryFilters>(defaultFilters);
   const [page, setPage] = useState(1);
-  const [resetDialogOpen, { setTrue: openResetDialog, setFalse: closeResetDialog }] =
-    useBoolean(false);
-  const [resetting, { setTrue: startReset, setFalse: endReset }] = useBoolean(false);
 
   // useRequest re-runs whenever filters or page change. refresh() forces a re-fetch.
   const {
@@ -120,16 +106,6 @@ export function HistoryPage() {
     exportToCsv(items);
   }
 
-  async function handleResetDemo() {
-    startReset();
-    await reseedDemo();
-    endReset();
-    closeResetDialog();
-    setFilters(defaultFilters());
-    setPage(1);
-    refreshRecords();
-  }
-
   return (
     <main id="main-content" className="overflow-y-auto p-6">
       {/* Page header */}
@@ -145,7 +121,6 @@ export function HistoryPage() {
         filters={filters}
         onChange={handleFilterChange}
         onExportCsv={handleExportCsv}
-        onResetDemo={openResetDialog}
       />
 
       {/* Table (loading skeleton or data) */}
@@ -170,32 +145,6 @@ export function HistoryPage() {
           onDeleted={handleDeleted}
         />
       )}
-
-      {/* Reset demo confirmation dialog */}
-      <Dialog
-        open={resetDialogOpen}
-        onOpenChange={(open) => {
-          if (!open) closeResetDialog();
-        }}
-      >
-        <DialogContent className="max-w-sm bg-bg-surface">
-          <DialogHeader>
-            <DialogTitle>Reset Demo Data</DialogTitle>
-            <DialogDescription>
-              This will permanently delete all current records and re-seed 50 fresh demo
-              inspections. This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={closeResetDialog} disabled={resetting}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleResetDemo} disabled={resetting}>
-              {resetting ? "Resetting…" : "Reset Demo Data"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </main>
   );
 }

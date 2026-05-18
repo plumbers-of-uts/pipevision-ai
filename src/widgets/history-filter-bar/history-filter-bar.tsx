@@ -9,7 +9,7 @@
  *   - Class filter is single-select (UI). Multi-select requires a custom combobox.
  */
 
-import { Filter, RefreshCw } from "lucide-react";
+import { Filter } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PIPEVISION_CLASSES } from "@/features/history-store/classes";
@@ -27,7 +27,6 @@ interface HistoryFilterBarProps {
   filters: HistoryFilters;
   onChange: (next: HistoryFilters) => void;
   onExportCsv: () => void;
-  onResetDemo: () => void;
 }
 
 const SEVERITIES: Array<{ value: Severity; label: string }> = [
@@ -37,12 +36,7 @@ const SEVERITIES: Array<{ value: Severity; label: string }> = [
   { value: "low", label: "Low" },
 ];
 
-export function HistoryFilterBar({
-  filters,
-  onChange,
-  onExportCsv,
-  onResetDemo,
-}: HistoryFilterBarProps) {
+export function HistoryFilterBar({ filters, onChange, onExportCsv }: HistoryFilterBarProps) {
   function set<K extends keyof HistoryFilters>(key: K, value: HistoryFilters[K]) {
     onChange({ ...filters, [key]: value });
   }
@@ -133,17 +127,6 @@ export function HistoryFilterBar({
         aria-label="Export filtered history as CSV"
       >
         Export CSV
-      </Button>
-
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={onResetDemo}
-        aria-label="Reset demo data"
-        className="gap-1.5 text-fg-secondary hover:text-error"
-      >
-        <RefreshCw className="size-3.5" aria-hidden={true} />
-        Reset Demo
       </Button>
 
       {/* Apply button (triggers re-fetch via parent state update) */}
