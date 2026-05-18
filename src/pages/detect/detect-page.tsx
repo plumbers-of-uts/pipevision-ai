@@ -15,7 +15,7 @@
  */
 
 import { useBoolean } from "ahooks";
-import { AlertTriangle, ArrowLeft, CheckSquare, Cpu, Info, Play, RefreshCw } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Info, Play, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { getActiveSession, useModelContext, useModelStatus } from "@/app/providers/model-provider";
@@ -412,24 +412,6 @@ export function DetectPage() {
                 </span>
               </div>
             )}
-
-            {/* Model selector row */}
-            <div className="mt-3 flex items-center gap-3 rounded-lg border border-border-default bg-bg-surface px-4 py-3.5">
-              <Cpu className="size-4 shrink-0 text-accent" aria-hidden={true} />
-              <span className="text-[12px] font-medium text-fg-secondary">Detection Model</span>
-              <div className="flex-1 rounded border border-border-hover bg-bg-base px-3 py-1.5 font-mono text-[12px] text-fg-primary">
-                YOLO26m — Sewer Defect Detection
-              </div>
-              {modelStatus.phase === "ready" && (
-                <label className="flex shrink-0 items-center gap-1.5 text-[12px] text-success">
-                  <CheckSquare className="size-3.5 text-success" aria-hidden={true} />
-                  {modelStatus.backend === "webgpu" ? "WebGPU" : "WASM"}
-                </label>
-              )}
-              {isModelLoading && (
-                <span className="shrink-0 text-[12px] text-fg-tertiary">Loading…</span>
-              )}
-            </div>
 
             {/* Run bar */}
             <div className="mt-4 flex items-center justify-center gap-3">
