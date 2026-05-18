@@ -300,6 +300,9 @@ export function ModelProvider({ children }: ModelProviderProps) {
 
         dispatch({ type: "READY", source, backend });
       } catch (err) {
+        // Surface the raw error to the console — the UI shows a friendly mapped
+        // message, but the underlying stack/message is essential for debugging.
+        console.error("[ModelProvider] load failed:", err);
         const code: ErrorCode = inferErrorCode(err);
         const retryable = code !== "UNSUPPORTED";
         dispatch({

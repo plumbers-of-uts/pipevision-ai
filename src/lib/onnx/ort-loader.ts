@@ -34,6 +34,10 @@ export async function getOrt(): Promise<typeof import("onnxruntime-web")> {
   ort.env.wasm.numThreads = 1;
   ort.env.wasm.proxy = false;
   ort.env.wasm.simd = true;
+  // Suppress verbose/info/warning native logs (e.g. VerifyEachNodeIsAssignedToAnEp)
+  // — these are routed through console.error in the WASM bridge and look like
+  // failures in DevTools. Real errors still propagate.
+  ort.env.logLevel = "error";
 
   ortModule = ort;
   return ort;
