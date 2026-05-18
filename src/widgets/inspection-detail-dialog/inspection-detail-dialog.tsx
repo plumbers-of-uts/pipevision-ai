@@ -29,7 +29,7 @@ export function InspectionDetailDialog({ record, onOpenChange }: InspectionDetai
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg bg-bg-surface">
+      <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col gap-4 overflow-y-auto bg-bg-surface">
         <DialogHeader>
           <DialogTitle>Inspection Detail</DialogTitle>
           <DialogDescription>
@@ -37,32 +37,42 @@ export function InspectionDetailDialog({ record, onOpenChange }: InspectionDetai
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-4">
+        {/* Annotated image — main subject of the dialog */}
+        <div className="flex items-center justify-center overflow-hidden rounded border border-border-default bg-bg-base">
           <img
             src={record.thumbnailDataUrl}
-            alt="Inspection thumbnail"
-            className="size-24 rounded object-cover"
+            alt="Annotated inspection with detection overlays"
+            className="block max-h-[60vh] w-full object-contain"
           />
-          <div className="flex flex-col gap-1.5 text-sm">
-            <div>
-              <span className="text-fg-tertiary">Date:</span> {dt.date} {dt.time}
+        </div>
+
+        {/* Inline metadata strip */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm sm:grid-cols-4">
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-fg-tertiary">Date</div>
+            <div className="font-mono text-fg-primary">{dt.date}</div>
+            <div className="font-mono text-[11px] text-fg-tertiary">{dt.time}</div>
+          </div>
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-fg-tertiary">Model</div>
+            <div className="truncate font-mono text-fg-primary" title={record.modelVersion}>
+              {record.modelVersion}
             </div>
-            <div>
-              <span className="text-fg-tertiary">Model:</span>{" "}
-              <span className="font-mono">{record.modelVersion}</span>
-            </div>
-            <div>
-              <span className="text-fg-tertiary">Inference:</span>{" "}
+          </div>
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-fg-tertiary">Inference</div>
+            <div className="font-mono text-fg-primary">
               {(record.inferenceMs / 1000).toFixed(2)}s
             </div>
-            <div>
-              <span className="text-fg-tertiary">Detections:</span> {record.detections.length}
-            </div>
+          </div>
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-fg-tertiary">Detections</div>
+            <div className="font-mono text-fg-primary">{record.detections.length}</div>
           </div>
         </div>
 
         {record.detections.length > 0 && (
-          <div className="mt-2">
+          <div>
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-fg-tertiary">
               Detections
             </div>
