@@ -4,17 +4,14 @@
  * Sections (top to bottom):
  *   1. Architecture summary (YOLO26m-seg, FP16 ONNX, 45 MB, opset 17)
  *   2. Dataset info (Roboflow Sewage Defect Detection, 980 images, 70/20/10 split)
- *   3. MetricsTable (test + val tabs, per-class numbers from model/per_class_metrics.csv)
- *   4. PerClassChart (horizontal bar, mAP@0.5 sorted desc)
- *   5. TrainingCurveChart (loss + mAP vs epoch, best ckpt at ep 114)
+ *   3. PerClassChart (horizontal bar, mAP@0.5 sorted desc)
+ *   4. TrainingCurveChart (loss + mAP vs epoch, best ckpt at ep 114)
  *
- * Matches gui-mockup.html #page-models (lines 1325-end).
  * All metric values come straight from cnn-assignment3/model/{metadata.yaml,per_class_metrics.csv}.
  */
 
-import { BookOpen, Brain, ChartLine, Database, LayoutGrid } from "lucide-react";
+import { BookOpen, Brain, ChartLine, Database } from "lucide-react";
 
-import { MetricsTable } from "@/widgets/metrics-table";
 import { PerClassChart } from "@/widgets/per-class-chart";
 import { TrainingCurveChart } from "@/widgets/training-curve-chart";
 
@@ -134,15 +131,6 @@ export function ModelsPage() {
           </div>
         </section>
       </div>
-
-      {/* Per-class metrics table */}
-      <section
-        className="mb-6 rounded-lg border border-border-default bg-bg-surface p-5"
-        aria-label="Per-class metrics"
-      >
-        <SectionHeading icon={LayoutGrid} title="Per-Class Metrics (PDF §1.1)" />
-        <MetricsTable />
-      </section>
 
       {/* Per-class mAP bar chart */}
       <section
