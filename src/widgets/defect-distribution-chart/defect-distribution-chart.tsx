@@ -1,10 +1,11 @@
 /**
- * defect-distribution-chart.tsx — Horizontal bar chart of detections per class.
- * Reads from aggregateByClass() and renders bars styled per PIPEVISION_CLASSES color.
- * Matches gui-mockup.html .bar-chart layout (label | bar track | count).
+ * defect-distribution-chart.tsx — Donut chart of detections per class.
+ * Reads from aggregateByClass(), renders severity-colored slices with the
+ * total in the center and a legend list below (color / name / percent / count).
  */
 
 import { useRequest } from "ahooks";
+import { Cell, Pie, PieChart, Tooltip } from "recharts";
 
 import { useDemoSeed } from "@/app/providers/seed-provider";
 import { PIPEVISION_CLASSES } from "@/features/history-store/classes";
@@ -18,50 +19,77 @@ interface ChartRow {
   percent: number;
 }
 
+interface ChartData {
+  rows: ChartRow[];
+  total: number;
+}
+
 interface DefectDistributionChartProps {
   refreshKey?: number;
 }
 
-async function fetchChartRows(): Promise<ChartRow[]> {
+async function fetchChartData(): Promise<ChartData> {
   const counts = await aggregateByClass();
-  const total = Object.values(counts).reduce((s, v) => s + v, 0) || 1;
-  return PIPEVISION_CLASSES.map((cls) => ({
+  const total = Object.values(counts).reduce((s, v) => s + v, 0);
+  const safeTotal = total || 1;
+  const rows = PIPEVISION_CLASSES.map((cls) => ({
     classId: cls.id,
     name: cls.name,
     color: cls.color,
     count: counts[cls.id] ?? 0,
-    percent: Math.round(((counts[cls.id] ?? 0) / total) * 100),
-  })).sort((a, b) => b.count - a.count);
+    percent: Math.round(((counts[cls.id] ?? 0) / safeTotal) * 100),
+  }))
+    .filter((r) => r.count > 0)
+    .sort((a, b) => b.count - a.count);
+  return { rows, total };
+}
+
+function CustomTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: ChartRow }>;
+}) {
+  if (!active || !payload?.[0]) return null;
+  const { name, count, percent } = payload[0].payload;
+  return (
+    <div className="rounded-lg border border-border-default bg-bg-surface px-3 py-2 shadow-md">
+      <div className="text-[12px] font-semibold text-fg-primary">{name}</div>
+      <div className="font-mono text-[12px] text-fg-secondary">
+        {count} <span className="text-fg-tertiary">({percent}%)</span>
+      </div>
+    </div>
+  );
 }
 
 export function DefectDistributionChart({ refreshKey }: DefectDistributionChartProps = {}) {
   const { status: seedStatus } = useDemoSeed();
-  const { data: rows = [], loading } = useRequest(fetchChartRows, {
+  const { data, loading } = useRequest(fetchChartData, {
     refreshDeps: [seedStatus, refreshKey],
   });
-
-  const maxCount = rows.reduce((m, r) => Math.max(m, r.count), 1);
+  const rows = data?.rows ?? [];
+  const total = data?.total ?? 0;
 
   if (loading) {
     return (
       <div
-        className="flex flex-col gap-2.5"
+        className="flex flex-col items-center gap-4"
         aria-busy="true"
         aria-label="Loading defect distribution"
       >
-        {Array.from({ length: 7 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton
-          <div key={i} className="flex items-center gap-2.5">
-            <div className="h-3 w-16 animate-pulse rounded bg-bg-elevated" />
-            <div className="h-5 flex-1 animate-pulse rounded bg-bg-elevated" />
-            <div className="h-3 w-6 animate-pulse rounded bg-bg-elevated" />
-          </div>
-        ))}
+        <div className="size-[180px] animate-pulse rounded-full bg-bg-elevated" />
+        <div className="flex w-full flex-col gap-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton
+            <div key={i} className="h-4 w-full animate-pulse rounded bg-bg-elevated" />
+          ))}
+        </div>
       </div>
     );
   }
 
-  if (rows.every((r) => r.count === 0)) {
+  if (total === 0) {
     return (
       <div className="flex h-32 items-center justify-center text-sm text-fg-tertiary">
         No detections recorded yet.
@@ -70,70 +98,62 @@ export function DefectDistributionChart({ refreshKey }: DefectDistributionChartP
   }
 
   return (
-    <div className="flex flex-col gap-2.5" role="list" aria-label="Defect distribution by class">
-      {rows.map((row) => {
-        const barWidth = maxCount > 0 ? (row.count / maxCount) * 100 : 0;
-        // Short abbreviation for label column (max 3 chars)
-        const abbr = row.name.slice(0, 3).toUpperCase();
-
-        return (
-          <div
-            key={row.classId}
-            className="flex items-center gap-2.5"
-            role="listitem"
-            aria-label={`${row.name}: ${row.count} detections (${row.percent}%)`}
+    <div
+      className="flex flex-col items-center gap-4"
+      role="group"
+      aria-label="Defect distribution by class"
+    >
+      <div className="relative">
+        <PieChart width={180} height={180}>
+          <Pie
+            data={rows}
+            dataKey="count"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            innerRadius={52}
+            outerRadius={86}
+            paddingAngle={1}
+            stroke="hsl(0, 0%, 100%)"
+            strokeWidth={2}
+            isAnimationActive={false}
           >
-            {/* Label */}
-            <div
-              className="w-[72px] shrink-0 text-right font-mono text-[11px] text-fg-secondary"
-              title={row.name}
-            >
-              {abbr}
-            </div>
-
-            {/* Track */}
-            <div className="relative h-5 flex-1 overflow-hidden rounded bg-bg-base">
-              <div
-                className="flex h-full items-center justify-end rounded pr-1.5 transition-all duration-700"
-                style={{
-                  width: `${Math.max(barWidth, row.count > 0 ? 4 : 0)}%`,
-                  background: row.color,
-                }}
-                role="progressbar"
-                aria-valuenow={row.count}
-                aria-valuemin={0}
-                aria-valuemax={maxCount}
-              >
-                {barWidth > 15 && (
-                  <span className="text-[10px] font-semibold text-white">{row.percent}%</span>
-                )}
-              </div>
-            </div>
-
-            {/* Count */}
-            <div className="w-7 shrink-0 font-mono text-[11px] text-fg-tertiary">{row.count}</div>
-          </div>
-        );
-      })}
-
-      {/* Legend */}
-      <div className="mt-3 border-t border-border-default pt-3">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.5px] text-fg-tertiary">
-          Legend
-        </div>
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
-          {rows.map((row) => (
-            <span key={row.classId} className="text-[10px] text-fg-tertiary">
-              <span
-                className="mr-0.5 inline-block size-2 rounded-full align-middle"
-                style={{ background: row.color }}
-                aria-hidden="true"
-              />
-              {row.name}
-            </span>
-          ))}
+            {rows.map((row) => (
+              <Cell key={row.classId} fill={row.color} />
+            ))}
+          </Pie>
+          <Tooltip content={<CustomTooltip />} />
+        </PieChart>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <span className="font-mono text-[22px] font-bold leading-none text-fg-primary">
+            {total}
+          </span>
+          <span className="mt-1 text-[10px] uppercase tracking-[0.5px] text-fg-tertiary">
+            Total
+          </span>
         </div>
       </div>
+
+      <ul className="flex w-full flex-col gap-1.5">
+        {rows.map((row) => (
+          <li
+            key={row.classId}
+            className="flex items-center gap-2 text-[11px]"
+            aria-label={`${row.name}: ${row.count} detections (${row.percent}%)`}
+          >
+            <span
+              className="size-2.5 shrink-0 rounded-sm"
+              style={{ background: row.color }}
+              aria-hidden="true"
+            />
+            <span className="flex-1 truncate text-fg-secondary" title={row.name}>
+              {row.name}
+            </span>
+            <span className="w-8 text-right font-mono text-fg-tertiary">{row.percent}%</span>
+            <span className="w-7 text-right font-mono text-fg-primary">{row.count}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

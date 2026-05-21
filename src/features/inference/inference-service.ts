@@ -18,7 +18,7 @@ import type { InferenceSession, Tensor } from "onnxruntime-web";
 import { float16ToFloat32Array, float32ToFloat16Array } from "@/lib/onnx/fp16";
 import { getOrt } from "@/lib/onnx/ort-loader";
 import { type PrototypeTensor, decodeMask } from "./mask-decoder";
-import { MODEL_CONFIG } from "./model-config";
+import type { ModelConfig } from "./model-config";
 import { applyNms } from "./nms";
 import { decodeYoloOutput, detectLayout, unletterboxBoxes } from "./postprocess";
 import { letterboxToTensor, sourceToBitmap } from "./preprocess";
@@ -50,6 +50,8 @@ export interface InferenceServiceInstance {
   /** Layout determined after warming run. */
   readonly layout: OutputLayout;
   readonly backend: "webgpu" | "wasm";
+  /** Model config the service is bound to. */
+  readonly modelId: ModelConfig["id"];
 }
 
 // ─── Module-scope singleton ───────────────────────────────────────────────────
@@ -68,13 +70,18 @@ let serviceInstance: InferenceServiceInstance | null = null;
 export async function getInferenceService(
   session: InferenceSession,
   backend: "webgpu" | "wasm",
+  cfg: ModelConfig,
 ): Promise<InferenceServiceInstance> {
-  if (serviceInstance !== null && serviceInstance.backend === backend) {
+  if (
+    serviceInstance !== null &&
+    serviceInstance.backend === backend &&
+    serviceInstance.modelId === cfg.id
+  ) {
     return serviceInstance;
   }
 
-  const layout = await performWarmingRun(session);
-  serviceInstance = createService(session, backend, layout);
+  const layout = await performWarmingRun(session, cfg);
+  serviceInstance = createService(session, backend, layout, cfg);
   return serviceInstance;
 }
 
@@ -91,6 +98,7 @@ export function clearInferenceService(): void {
 function decodeMaskPrototypes(
   results: Record<string, Tensor>,
   session: InferenceSession,
+  cfg: ModelConfig,
 ): PrototypeTensor {
   const protoName = session.outputNames[1] ?? "output1";
   const proto = results[protoName];
@@ -101,9 +109,9 @@ function decodeMaskPrototypes(
     );
   }
   const dims = proto.dims;
-  const channels = dims[1] ?? MODEL_CONFIG.maskChannels;
-  const height = dims[2] ?? MODEL_CONFIG.maskRes;
-  const width = dims[3] ?? MODEL_CONFIG.maskRes;
+  const channels = dims[1] ?? cfg.maskChannels;
+  const height = dims[2] ?? cfg.maskRes;
+  const width = dims[3] ?? cfg.maskRes;
   return {
     data: outputAsFloat32(proto),
     channels,
@@ -150,9 +158,12 @@ function outputAsFloat32(output: Tensor): Float32Array {
 
 // ─── Warming run ─────────────────────────────────────────────────────────────
 
-async function performWarmingRun(session: InferenceSession): Promise<OutputLayout> {
+async function performWarmingRun(
+  session: InferenceSession,
+  cfg: ModelConfig,
+): Promise<OutputLayout> {
   const ort = await getOrt();
-  const size = MODEL_CONFIG.inputSize;
+  const size = cfg.inputSize;
   const dummyData = new Float32Array(1 * 3 * size * size).fill(0.5);
   const inputDtype = resolveInputDtype(session);
   const dummyTensor = buildInputTensor(ort, dummyData, [1, 3, size, size], inputDtype);
@@ -184,7 +195,7 @@ async function performWarmingRun(session: InferenceSession): Promise<OutputLayou
   }
 
   // Seg models must emit a second output (prototypes) — fail loud when missing.
-  if (MODEL_CONFIG.modelTask === "segment") {
+  if (cfg.modelTask === "segment") {
     if (session.outputNames.length < 2) {
       throw new InferenceError(
         "Segment task configured but ONNX has < 2 outputs. Re-export with task=segment.",
@@ -193,8 +204,8 @@ async function performWarmingRun(session: InferenceSession): Promise<OutputLayou
     }
   }
 
-  const maskChannels = MODEL_CONFIG.modelTask === "segment" ? MODEL_CONFIG.maskChannels : 0;
-  return detectLayout(output.dims, MODEL_CONFIG.numClasses, maskChannels);
+  const maskChannels = cfg.modelTask === "segment" ? cfg.maskChannels : 0;
+  return detectLayout(output.dims, cfg.numClasses, maskChannels);
 }
 
 // ─── Service factory ──────────────────────────────────────────────────────────
@@ -203,6 +214,7 @@ function createService(
   session: InferenceSession,
   backend: "webgpu" | "wasm",
   layout: OutputLayout,
+  cfg: ModelConfig,
 ): InferenceServiceInstance {
   async function run(
     input: InferenceInput,
@@ -214,7 +226,7 @@ function createService(
 
     // Preprocess
     const bitmap = await sourceToBitmap(input.source);
-    const lb = letterboxToTensor(bitmap, MODEL_CONFIG.inputSize);
+    const lb = letterboxToTensor(bitmap, cfg.inputSize);
     bitmap.close();
 
     opts?.signal?.throwIfAborted();
@@ -226,7 +238,7 @@ function createService(
     const ortTensor = buildInputTensor(
       ort,
       lb.tensor,
-      [1, 3, MODEL_CONFIG.inputSize, MODEL_CONFIG.inputSize],
+      [1, 3, cfg.inputSize, cfg.inputSize],
       inputDtype,
     );
 
@@ -252,34 +264,34 @@ function createService(
       throw new InferenceError("No output tensor produced.", "RUNTIME");
     }
 
-    const isSegment = MODEL_CONFIG.modelTask === "segment";
-    const maskChannels = isSegment ? MODEL_CONFIG.maskChannels : 0;
+    const isSegment = cfg.modelTask === "segment";
+    const maskChannels = isSegment ? cfg.maskChannels : 0;
 
     const rawData = outputAsFloat32(rawOutput);
     const decoded = decodeYoloOutput(
       { data: rawData, dims: rawOutput.dims },
-      MODEL_CONFIG.confThreshold,
-      MODEL_CONFIG.numClasses,
+      cfg.confThreshold,
+      cfg.numClasses,
       layout,
       maskChannels,
-      MODEL_CONFIG.inputSize,
+      cfg.inputSize,
     );
 
     // Invert letterbox transform (preserves coeffs / bbox640Norm for seg)
-    const unboxed = unletterboxBoxes(decoded, lb, MODEL_CONFIG.inputSize);
+    const unboxed = unletterboxBoxes(decoded, lb, cfg.inputSize);
 
     // NMS — generic over T extends InferenceRawDetection so we keep mask data
     const nmsed: InferenceRawWithCoeffs[] = applyNms(
       unboxed,
-      MODEL_CONFIG.iouThreshold,
-      MODEL_CONFIG.maxDetections,
+      cfg.iouThreshold,
+      cfg.maxDetections,
     ) as InferenceRawWithCoeffs[];
 
     // Mask decode (segment only) — strip coeffs/bbox640Norm before returning.
     let maskDecodeMs = 0;
     if (isSegment) {
       const maskStart = performance.now();
-      const protoTensor = decodeMaskPrototypes(results, session);
+      const protoTensor = decodeMaskPrototypes(results, session, cfg);
 
       for (const det of nmsed) {
         if (det.coeffs && det.bbox640Norm) {
@@ -289,7 +301,7 @@ function createService(
               protoTensor,
               det.bbox640Norm,
               lb,
-              MODEL_CONFIG.inputSize,
+              cfg.inputSize,
             );
             if (decodedMask !== null) {
               det.mask = decodedMask.mask;
@@ -324,5 +336,5 @@ function createService(
     };
   }
 
-  return { run, layout, backend };
+  return { run, layout, backend, modelId: cfg.id };
 }

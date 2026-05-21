@@ -2,6 +2,7 @@ import { Cpu, History, LayoutDashboard, ScanSearch } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { useModelStatus } from "@/app/providers/model-provider";
+import { ModelSelector } from "@/widgets/model-selector";
 import { ModelStatusPill } from "@/widgets/model-status-pill";
 
 interface NavItem {
@@ -80,8 +81,12 @@ export function AppSidebar() {
         </ul>
       </nav>
 
-      {/* Bottom slot — live model status pill (T11) */}
-      <div className="border-t border-border-default px-4 py-3.5" data-testid="sidebar-bottom-slot">
+      {/* Bottom slot — model selector + live status pill (T11) */}
+      <div
+        className="flex flex-col gap-3 border-t border-border-default px-4 py-3.5"
+        data-testid="sidebar-bottom-slot"
+      >
+        <ModelSelector />
         <ModelStatusPill status={modelStatus} />
       </div>
     </aside>

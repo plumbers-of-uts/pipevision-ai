@@ -16,9 +16,11 @@ import { v4 as uuidv4 } from "uuid";
 import { getActiveBackend, getActiveSession } from "@/app/providers/model-provider";
 import { CLASS_BY_ID } from "@/features/history-store/classes";
 import type { Detection } from "@/features/history-store/types";
+import { getActiveModelId } from "./active-model-store";
 import { runSpacesFallback } from "./fallback-spaces";
 import { getInferenceService } from "./inference-service";
 import { encodeMaskToPng } from "./mask-serializer";
+import { getModelConfig } from "./model-config";
 import type { ErrorCode, InferenceInput, InferenceRawDetection } from "./types";
 
 // ─── Mapping ──────────────────────────────────────────────────────────────────
@@ -102,7 +104,8 @@ export function useInference(): UseInferenceResult {
     setLastError(null);
 
     try {
-      const service = await getInferenceService(session, backend);
+      const cfg = getModelConfig(getActiveModelId());
+      const service = await getInferenceService(session, backend, cfg);
       const result = await service.run(input, { signal: controller.signal });
       setLastTotalMs(result.totalMs);
       return await mapToDetections(result.detections);

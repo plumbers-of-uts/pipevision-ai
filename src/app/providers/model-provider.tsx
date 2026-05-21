@@ -14,12 +14,21 @@
  * D13 preserved: no Web Workers.
  */
 
-import { type ReactNode, createContext, useCallback, useContext, useReducer, useRef } from "react";
+import {
+  type ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useReducer,
+  useRef,
+} from "react";
 
 import type { InferenceSession } from "onnxruntime-web";
 
+import { getActiveModelId, subscribeActiveModel } from "@/features/inference/active-model-store";
 import { clearInferenceService, getInferenceService } from "@/features/inference/inference-service";
-import { MODEL_CONFIG } from "@/features/inference/model-config";
+import { getModelConfig } from "@/features/inference/model-config";
 import { selectBackend } from "@/features/inference/runtime-select";
 import type { ErrorCode, ModelContextValue, ModelStatus } from "@/features/inference/types";
 import { getOrt } from "@/lib/onnx/ort-loader";
@@ -196,14 +205,14 @@ export function ModelProvider({ children }: ModelProviderProps) {
    */
   const loadModel = useCallback(
     async (bustCache = false, integrityRetry = false): Promise<void> => {
-      const { modelUrl, sha256, isConfigured } = MODEL_CONFIG;
+      const cfg = getModelConfig(getActiveModelId());
+      const { modelUrl, sha256, isConfigured, displayName } = cfg;
 
       // Fail-loud when URL is not configured (S2 policy)
       if (!isConfigured || !modelUrl) {
         dispatch({
           type: "ERROR",
-          reason:
-            "Model URL is not configured. Set VITE_MODEL_URL in your environment and rebuild.",
+          reason: `${displayName} model URL is not configured yet. Upload the ONNX file and update model-config.ts.`,
           retryable: false,
           code: "NETWORK",
         });
@@ -212,7 +221,7 @@ export function ModelProvider({ children }: ModelProviderProps) {
 
       if (!sha256) {
         console.warn(
-          "[ModelProvider] VITE_MODEL_SHA256 is not set — integrity check skipped (dev mode).",
+          `[ModelProvider] ${displayName}: SHA-256 not set — integrity check skipped (dev mode).`,
         );
       }
 
@@ -299,7 +308,7 @@ export function ModelProvider({ children }: ModelProviderProps) {
         dispatch({ type: "WARMING" });
 
         clearInferenceService();
-        await getInferenceService(session, backend);
+        await getInferenceService(session, backend, cfg);
 
         sessionRef = session;
         backendRef = backend;
@@ -353,6 +362,22 @@ export function ModelProvider({ children }: ModelProviderProps) {
     },
     [loadModel],
   );
+
+  // React to model selection changes: tear down the current session and
+  // immediately kick off a fresh load. Selection is an explicit user action,
+  // so we don't gate on which page is mounted.
+  useEffect(() => {
+    return subscribeActiveModel(() => {
+      ensureReadyPromise = null;
+      sessionRef = null;
+      backendRef = null;
+      clearInferenceService();
+      dispatch({ type: "RESET" });
+      ensureReadyPromise = loadModel(false).finally(() => {
+        ensureReadyPromise = null;
+      });
+    });
+  }, [loadModel]);
 
   const value: ModelContextValue = { status, ensureReady, retry };
 

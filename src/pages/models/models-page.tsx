@@ -2,44 +2,19 @@
  * models-page.tsx — Model Information page.
  *
  * Sections (top to bottom):
- *   1. Architecture summary (YOLO26m-seg, FP16 ONNX, 45 MB, opset 17)
- *   2. Dataset info (Roboflow Sewage Defect Detection, 980 images, 70/20/10 split)
- *   3. PerClassChart (horizontal bar, mAP@0.5 sorted desc)
+ *   1. Architecture summary (from MODEL_REGISTRY[activeId].archSpecs)
+ *   2. Dataset info (from MODEL_REGISTRY[activeId].datasetSpecs)
+ *   3. PerClassChart — rendered only when the active model has class metrics
  *
- * All metric values come straight from cnn-assignment3/model/{metadata.yaml,per_class_metrics.csv}.
+ * The active model is resolved from active-model-store and reacts to the
+ * sidebar ModelSelector.
  */
 
 import { Brain, ChartLine, Database } from "lucide-react";
 
+import { useActiveModelId } from "@/features/inference/active-model-store";
+import { MODEL_REGISTRY } from "@/features/inference/model-config";
 import { PerClassChart } from "@/widgets/per-class-chart";
-
-// ─── Spec data ────────────────────────────────────────────────────────────────
-
-const ARCH_SPECS = [
-  { key: "Architecture", val: "YOLO26m-seg (Ultralytics)" },
-  { key: "Parameters", val: "21.8M" },
-  { key: "Precision", val: "FP16 ONNX" },
-  { key: "Model size", val: "45 MB" },
-  { key: "ONNX opset", val: "17" },
-  { key: "Input size", val: "640 × 640" },
-  { key: "mAP@0.5 (box)", val: "0.534 (test)" },
-  { key: "mAP@0.5:0.95 (box)", val: "0.302 (test)" },
-  { key: "mAP@0.5 (mask)", val: "0.475 (test)" },
-  { key: "mAP@0.5:0.95 (mask)", val: "0.271 (test)" },
-  { key: "Best epoch", val: "114 / 200" },
-  { key: "Framework", val: "PyTorch 2.x + Ultralytics" },
-] as const;
-
-const DATASET_SPECS = [
-  { key: "Source", val: "Roboflow Sewage Defect Detection" },
-  { key: "Total images", val: "980" },
-  { key: "Train split", val: "70% (686 images)" },
-  { key: "Val split", val: "20% (196 images)" },
-  { key: "Test split", val: "10% (98 images)" },
-  { key: "Classes", val: "7 defect categories" },
-  { key: "Class imbalance", val: "22.5:1 long-tail (Crack dominant)" },
-  { key: "Annotation", val: "YOLO format bounding boxes" },
-] as const;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -72,14 +47,22 @@ function SpecRow({ label, value }: { label: string; value: string }) {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export function ModelsPage() {
+  const activeId = useActiveModelId();
+  const cfg = MODEL_REGISTRY[activeId];
+
   return (
     <main id="main-content" className="overflow-y-auto p-6">
       {/* Page header */}
       <div className="mb-6">
         <h1 className="text-xl font-bold text-fg-primary">Model Information</h1>
         <p className="mt-1 text-[13px] text-fg-tertiary">
-          YOLO-based object detection for sewer pipe defect analysis — academic benchmark results
+          {cfg.displayName} — sewer pipe defect detection benchmark results
         </p>
+        {!cfg.isConfigured ? (
+          <p className="mt-2 text-[12px] text-warning">
+            This model is not yet available. The ONNX export hasn't been uploaded.
+          </p>
+        ) : null}
       </div>
 
       {/* Architecture + Dataset two-column */}
@@ -90,7 +73,7 @@ export function ModelsPage() {
         >
           <SectionHeading icon={Brain} title="Model Architecture" />
           <div className="flex flex-col">
-            {ARCH_SPECS.map((s) => (
+            {cfg.archSpecs.map((s) => (
               <SpecRow key={s.key} label={s.key} value={s.val} />
             ))}
           </div>
@@ -102,7 +85,7 @@ export function ModelsPage() {
         >
           <SectionHeading icon={Database} title="Dataset Information" />
           <div className="flex flex-col">
-            {DATASET_SPECS.map((s) => (
+            {cfg.datasetSpecs.map((s) => (
               <SpecRow key={s.key} label={s.key} value={s.val} />
             ))}
           </div>
@@ -130,14 +113,26 @@ export function ModelsPage() {
         </section>
       </div>
 
-      {/* Per-class mAP bar chart */}
-      <section
-        className="mb-6 rounded-lg border border-border-default bg-bg-surface p-5"
-        aria-label="mAP by class chart"
-      >
-        <SectionHeading icon={ChartLine} title="mAP@0.5 by Class" />
-        <PerClassChart />
-      </section>
+      {/* Per-class mAP bar chart — only when metrics are available for this model */}
+      {cfg.classMetrics !== null ? (
+        <section
+          className="mb-6 rounded-lg border border-border-default bg-bg-surface p-5"
+          aria-label="mAP by class chart"
+        >
+          <SectionHeading icon={ChartLine} title="mAP@0.5 by Class" />
+          <PerClassChart data={cfg.classMetrics} />
+        </section>
+      ) : (
+        <section
+          className="mb-6 rounded-lg border border-dashed border-border-default bg-bg-surface/60 p-5 text-center"
+          aria-label="Per-class metrics placeholder"
+        >
+          <SectionHeading icon={ChartLine} title="mAP@0.5 by Class" />
+          <p className="text-[12px] text-fg-tertiary">
+            Per-class metrics will appear here once the model is benchmarked.
+          </p>
+        </section>
+      )}
     </main>
   );
 }

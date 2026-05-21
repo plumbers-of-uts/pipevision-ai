@@ -130,6 +130,7 @@ export function DetectionResultPanel({ detections, inferenceMs }: DetectionResul
                   <div
                     className="h-1 flex-1 overflow-hidden rounded-full bg-bg-base"
                     role="progressbar"
+                    tabIndex={0}
                     aria-valuenow={Math.round(det.confidence * 100)}
                     aria-valuemin={0}
                     aria-valuemax={100}

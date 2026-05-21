@@ -3,7 +3,7 @@
  * Numbers come from cnn-assignment3/model/per_class_metrics.csv (box, test split).
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Tooltip, XAxis, YAxis } from "recharts";
 
 interface ClassData {
@@ -11,7 +11,7 @@ interface ClassData {
   map50: number;
 }
 
-const CLASS_DATA: ClassData[] = [
+const FALLBACK_chartData: ClassData[] = [
   { name: "Utility intrusion", map50: 0.901 },
   { name: "Hole", map50: 0.832 },
   { name: "Obstacle", map50: 0.704 },
@@ -20,7 +20,7 @@ const CLASS_DATA: ClassData[] = [
   { name: "Crack", map50: 0.397 },
   { name: "Joint offset", map50: 0.225 },
   { name: "Buckling", map50: 0.08 },
-].sort((a, b) => b.map50 - a.map50);
+];
 
 // DESIGN.md HSL tokens (avoid oklch — recharts SVG renders unreliably with oklch in some browsers)
 const ACCENT = "hsl(28, 92%, 52%)"; // --accent
@@ -44,13 +44,22 @@ function CustomTooltip({
   );
 }
 
-export function PerClassChart() {
+interface PerClassChartProps {
+  /** Optional override; defaults to the YOLO26m-seg test-set numbers. */
+  data?: readonly ClassData[];
+}
+
+export function PerClassChart({ data }: PerClassChartProps = {}) {
   // Use a measured-width chart instead of ResponsiveContainer.
   // ResponsiveContainer relies on ResizeObserver, which can fail to fire under
   // headless fullPage screenshot mechanisms — bars then render but the
   // capture happens before the resize cycle completes.
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(900);
+  const chartData = useMemo(
+    () => [...(data ?? FALLBACK_chartData)].sort((a, b) => b.map50 - a.map50),
+    [data],
+  );
 
   useEffect(() => {
     const measure = () => {
@@ -67,7 +76,7 @@ export function PerClassChart() {
         <BarChart
           width={width}
           height={280}
-          data={CLASS_DATA}
+          data={chartData}
           layout="vertical"
           margin={{ top: 4, right: 56, bottom: 4, left: 108 }}
         >
@@ -91,7 +100,7 @@ export function PerClassChart() {
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: HOVER }} />
           <Bar dataKey="map50" radius={[0, 3, 3, 0]} maxBarSize={22} fill={ACCENT}>
-            {CLASS_DATA.map((entry) => (
+            {chartData.map((entry) => (
               <Cell
                 key={entry.name}
                 fill={ACCENT}

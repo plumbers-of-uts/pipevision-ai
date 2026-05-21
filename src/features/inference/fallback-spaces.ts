@@ -16,7 +16,8 @@ import { v4 as uuidv4 } from "uuid";
 
 import { CLASS_BY_ID } from "@/features/history-store/classes";
 import type { Detection } from "@/features/history-store/types";
-import { MODEL_CONFIG } from "./model-config";
+import { getActiveModelId } from "./active-model-store";
+import { getModelConfig } from "./model-config";
 import type { ErrorCode } from "./types";
 
 // ─── Response shape from Spaces (C6' Option A) ───────────────────────────────
@@ -72,25 +73,29 @@ function adaptSpacesDetections(spacesDetections: SpacesDetection[]): Detection[]
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-/** Returns true when the Spaces fallback is available (URL is configured). */
+/** Returns true when the Spaces fallback is available (URL is configured for the active model). */
 export function isSpacesFallbackAvailable(): boolean {
-  return MODEL_CONFIG.spacesUrl !== null && MODEL_CONFIG.spacesUrl.length > 0;
+  const cfg = getModelConfig(getActiveModelId());
+  return cfg.spacesUrl !== null && cfg.spacesUrl.length > 0;
 }
 
 /**
  * Run inference on HF Spaces and return detections in local Detection format.
  *
  * @param imageDataUrl  Base64 data URL of the inspection image (jpeg preferred).
- * @param conf          Confidence threshold (default from MODEL_CONFIG).
- * @param iou           IoU threshold (default from MODEL_CONFIG).
+ * @param conf          Confidence threshold (defaults to active model config).
+ * @param iou           IoU threshold (defaults to active model config).
  * @throws SpacesFallbackError if Spaces URL is not configured or request fails.
  */
 export async function runSpacesFallback(
   imageDataUrl: string,
-  conf: number = MODEL_CONFIG.confThreshold,
-  iou: number = MODEL_CONFIG.iouThreshold,
+  conf?: number,
+  iou?: number,
 ): Promise<Detection[]> {
-  const { spacesUrl } = MODEL_CONFIG;
+  const cfg = getModelConfig(getActiveModelId());
+  const { spacesUrl } = cfg;
+  const confThreshold = conf ?? cfg.confThreshold;
+  const iouThreshold = iou ?? cfg.iouThreshold;
 
   if (!spacesUrl) {
     throw new SpacesFallbackError(
@@ -106,7 +111,7 @@ export async function runSpacesFallback(
     const res = await fetch(`${spacesUrl}/run/predict`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: [imageDataUrl, conf, iou] }),
+      body: JSON.stringify({ data: [imageDataUrl, confThreshold, iouThreshold] }),
       signal: controller.signal,
     });
 

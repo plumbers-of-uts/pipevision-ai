@@ -415,7 +415,7 @@ export function DetectPage() {
               <div className="mt-3 flex items-center gap-3 rounded-lg border border-border-default bg-bg-elevated px-4 py-3">
                 <img
                   src={imageUrl}
-                  alt="Selected image preview"
+                  alt="Selected preview"
                   className="size-10 rounded object-cover"
                 />
                 <span className="flex-1 truncate text-[12px] text-fg-secondary">
