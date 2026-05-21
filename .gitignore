@@ -32,3 +32,6 @@ dist/
 
 # oma runtime state
 .agents/state/
+
+# oma docs generated artifacts
+docs/generated/

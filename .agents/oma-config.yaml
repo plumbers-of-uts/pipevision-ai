@@ -2,9 +2,11 @@
 language: en
 date_format: ISO
 timezone: Asia/Seoul
-model_preset: claude-only
+model_preset: claude
 vendors:
   - claude
   - codex
+  - copilot
   - cursor
   - gemini
+  - qwen
