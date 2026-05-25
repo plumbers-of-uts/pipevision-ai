@@ -6,8 +6,8 @@
  *   2. Dataset info (from MODEL_REGISTRY[activeId].datasetSpecs)
  *   3. PerClassChart — rendered only when the active model has class metrics
  *
- * The active model is resolved from active-model-store and reacts to the
- * sidebar ModelSelector.
+ * The active model is resolved from active-model-store (defaults to the
+ * configured model; the sidebar selector has been removed).
  */
 
 import { Brain, ChartLine, Database } from "lucide-react";
