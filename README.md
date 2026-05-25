@@ -64,7 +64,7 @@ Buckling · Crack · Debris · Hole · Joint offset · Obstacle · Utility intru
 | Model hosting | Hugging Face Hub (FP16 ONNX, NMS-included seg export) |
 | Service worker | Serwist (`src/sw.ts`) — precache app shell + cache-first for ONNX + ORT WASM |
 | Fallback | Hugging Face Spaces (Gradio) — manual button, structured JSON detections |
-| Tests | Vitest (`src/features/inference/__tests__/`) |
+| Tests | Vitest (`src/features/**/__tests__/`) |
 | Code hosting | GitHub Pages, deployed via GitHub Actions |
 | Lint, format, hooks | biome + lefthook + commitlint |
 | Task runner | mise |
@@ -94,7 +94,7 @@ mise run build       # type-check + production build
 mise run lint        # biome check
 mise run format      # biome format --write
 mise run typecheck   # tsc --noEmit
-bun run test         # vitest unit tests for postprocess + NMS + fp16 codec
+bun run test         # vitest unit tests for postprocess + NMS + history defect-class filter
 ```
 
 ## Configuration
