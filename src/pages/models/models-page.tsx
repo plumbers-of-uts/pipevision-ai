@@ -163,15 +163,15 @@ export function ModelsPage() {
             <ul className="flex flex-wrap gap-2">
               {TEAM_MEMBERS.map((member) => {
                 const chipClass =
-                  "rounded-md border border-border-default bg-bg-base px-3 py-1.5 text-[12px] font-medium text-fg-primary";
+                  "inline-flex items-center rounded-md border border-border-default bg-bg-base px-3 py-1.5 text-[12px] font-medium text-fg-primary";
                 return (
-                  <li key={member.name}>
+                  <li key={member.name} className="flex">
                     {member.github ? (
                       <a
                         href={member.github}
                         target="_blank"
                         rel="noreferrer"
-                        className={`inline-flex items-center gap-1.5 transition-colors duration-150 hover:bg-bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus ${chipClass}`}
+                        className={`gap-1.5 transition-colors duration-150 hover:bg-bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus ${chipClass}`}
                         aria-label={`${member.name} on GitHub`}
                       >
                         <Github className="size-3 text-fg-tertiary" aria-hidden={true} />
