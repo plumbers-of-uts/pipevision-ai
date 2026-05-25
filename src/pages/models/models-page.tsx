@@ -5,16 +5,22 @@
  *   1. Architecture summary (from MODEL_REGISTRY[activeId].archSpecs)
  *   2. Dataset info (from MODEL_REGISTRY[activeId].datasetSpecs)
  *   3. PerClassChart — rendered only when the active model has class metrics
+ *   4. Credits — team members, program, and source repository
  *
  * The active model is resolved from active-model-store (defaults to the
  * configured model; the sidebar selector has been removed).
  */
 
-import { Brain, ChartLine, Database } from "lucide-react";
+import { Brain, ChartLine, Database, Github, Users } from "lucide-react";
 
 import { useActiveModelId } from "@/features/inference/active-model-store";
 import { MODEL_REGISTRY } from "@/features/inference/model-config";
 import { PerClassChart } from "@/widgets/per-class-chart";
+
+// ─── Credits ──────────────────────────────────────────────────────────────────
+
+const TEAM_MEMBERS = ["Eunkwang Shin", "Bo Zhao", "Jaydn Braganza"] as const;
+const REPO_URL = "https://github.com/plumbers-of-uts/pipevision-ai";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -133,6 +139,45 @@ export function ModelsPage() {
           </p>
         </section>
       )}
+
+      {/* Credits */}
+      <section
+        className="rounded-lg border border-border-default bg-bg-surface p-5"
+        aria-label="Project credits"
+      >
+        <SectionHeading icon={Users} title="Credits" />
+        <div className="flex flex-col gap-4">
+          <div>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.5px] text-fg-tertiary">
+              Team — Plumbers of UTS
+            </div>
+            <ul className="flex flex-wrap gap-2">
+              {TEAM_MEMBERS.map((name) => (
+                <li
+                  key={name}
+                  className="rounded-md border border-border-default bg-bg-base px-3 py-1.5 text-[12px] font-medium text-fg-primary"
+                >
+                  {name}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <p className="text-[12px] text-fg-tertiary">
+            Master of Artificial Intelligence at UTS · 42028 Deep Learning and CNN · Project #37
+          </p>
+
+          <a
+            href={REPO_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex w-fit items-center gap-2 rounded-md border border-border-default bg-bg-base px-3 py-1.5 text-[12px] font-medium text-fg-primary transition-colors duration-150 hover:bg-bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+          >
+            <Github className="size-3.5 text-fg-tertiary" aria-hidden={true} />
+            github.com/plumbers-of-uts/pipevision-ai
+          </a>
+        </div>
+      </section>
     </main>
   );
 }
