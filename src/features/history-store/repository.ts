@@ -63,8 +63,14 @@ export async function getById(id: string): Promise<HistoryRecord | undefined> {
  *
  * Filter evaluation order (most selective first for performance):
  *   1. date range (createdAt index)
- *   2. classFilter (multi-entry index via .where('detections.classId').anyOf())
+ *   2. classFilter (in-memory: at least one detection's classId must match)
  *   3. severityFilter (in-memory, resolved from classId via CLASS_BY_ID)
+ *
+ * NOTE: class filtering is done in memory, NOT via a Dexie multiEntry index.
+ * IndexedDB multiEntry only spreads an array of *primitive* keys; a keyPath
+ * into objects nested in an array (`detections.classId`) resolves to undefined,
+ * so such an index is always empty. Querying it returned zero rows for every
+ * class. We scan in memory instead — same pattern as the severity filter.
  *
  * When classFilter and severityFilter are both provided, only records
  * that pass BOTH filters are returned (logical AND).
@@ -73,17 +79,6 @@ export async function getById(id: string): Promise<HistoryRecord | undefined> {
  */
 export async function list(opts: ListOptions = {}): Promise<ListResult> {
   const { page = 1, pageSize = 20, classFilter, severityFilter, from, to } = opts;
-
-  // Collect matching record ids when using indexed class filter
-  let filteredIds: Set<string> | null = null;
-
-  if (classFilter !== undefined && classFilter.length > 0) {
-    const matchingRecords = await db.records
-      .where("detections.classId")
-      .anyOf(classFilter)
-      .primaryKeys();
-    filteredIds = new Set(matchingRecords as string[]);
-  }
 
   // Build base collection, applying date range via index when possible
   let collection = db.records.orderBy("createdAt");
@@ -100,15 +95,18 @@ export async function list(opts: ListOptions = {}): Promise<ListResult> {
     collection = db.records.orderBy("createdAt").reverse();
   }
 
-  // Resolve severity set for in-memory filtering
+  // Resolve filter sets for in-memory filtering
+  const classSet: Set<number> | null =
+    classFilter !== undefined && classFilter.length > 0 ? new Set(classFilter) : null;
   const severitySet: Set<Severity> | null =
     severityFilter !== undefined && severityFilter.length > 0 ? new Set(severityFilter) : null;
 
   // Apply in-memory filters
   const allMatching = await collection.filter((record) => {
-    // Class filter (via pre-computed id set)
-    if (filteredIds !== null && !filteredIds.has(record.id)) {
-      return false;
+    // Class filter: at least one detection must match a requested classId
+    if (classSet !== null) {
+      const hasClass = record.detections.some((det) => classSet.has(det.classId));
+      if (!hasClass) return false;
     }
 
     // Severity filter: at least one detection must match a requested severity

@@ -9,7 +9,15 @@
  * Indexes:
  *   createdAt      — range queries for date-based pagination and "recent" widget
  *   modelVersion   — filter/group by model version on the Models page
- *   *detections.classId — multi-entry index for class-based filtering (C4 contract)
+ *   *detections.classId — declared but effectively EMPTY (see warning below);
+ *                         class filtering is done in memory in repository.list()
+ *
+ * WARNING — do NOT query `*detections.classId` as a class filter. IndexedDB
+ * multiEntry only spreads an array of *primitive* keys; a keyPath into objects
+ * nested in an array (`detections.classId`) resolves to undefined, so the index
+ * receives no entries and `.where('detections.classId').anyOf(...)` returns zero
+ * rows for every class. The index is retained only to avoid a schema-version
+ * migration; repository.list() filters classId in memory instead.
  *
  * ACID expectations:
  *   IndexedDB provides snapshot isolation per transaction.
@@ -47,7 +55,9 @@ class PipeVisionDatabase extends Dexie {
      *   id                   → primary key (explicit, string uuid)
      *   createdAt            → B-tree index for date range & ordering
      *   modelVersion         → B-tree index for model-specific aggregation
-     *   *detections.classId  → multi-entry index (one entry per Detection in array)
+     *   *detections.classId  → empty in practice (IndexedDB cannot multiEntry a
+     *                          sub-property of objects in an array); see header
+     *                          warning. Class filtering happens in memory.
      *
      * Fields NOT indexed (stored only): imageBlob, thumbnailDataUrl,
      *   detections[].* (except classId), inferenceMs, notes.
