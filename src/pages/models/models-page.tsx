@@ -19,7 +19,17 @@ import { PerClassChart } from "@/widgets/per-class-chart";
 
 // ─── Credits ──────────────────────────────────────────────────────────────────
 
-const TEAM_MEMBERS = ["Eunkwang Shin", "Bo Zhao", "Jaydn Braganza"] as const;
+interface TeamMember {
+  name: string;
+  /** Optional personal GitHub profile URL — renders the name as a link. */
+  github?: string;
+}
+
+const TEAM_MEMBERS: readonly TeamMember[] = [
+  { name: "Eunkwang Shin", github: "https://github.com/gracefullight" },
+  { name: "Bo Zhao" },
+  { name: "Jaydn Braganza" },
+];
 const REPO_URL = "https://github.com/plumbers-of-uts/pipevision-ai";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -152,20 +162,32 @@ export function ModelsPage() {
               Team — Plumbers of UTS
             </div>
             <ul className="flex flex-wrap gap-2">
-              {TEAM_MEMBERS.map((name) => (
-                <li
-                  key={name}
-                  className="rounded-md border border-border-default bg-bg-base px-3 py-1.5 text-[12px] font-medium text-fg-primary"
-                >
-                  {name}
-                </li>
-              ))}
+              {TEAM_MEMBERS.map((member) => {
+                const chipClass =
+                  "rounded-md border border-border-default bg-bg-base px-3 py-1.5 text-[12px] font-medium text-fg-primary";
+                return (
+                  <li key={member.name}>
+                    {member.github ? (
+                      <a
+                        href={member.github}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`inline-flex items-center gap-1.5 transition-colors duration-150 hover:bg-bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus ${chipClass}`}
+                        aria-label={`${member.name} on GitHub`}
+                      >
+                        <Github className="size-3 text-fg-tertiary" aria-hidden={true} />
+                        {member.name}
+                      </a>
+                    ) : (
+                      <span className={chipClass}>{member.name}</span>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
-          <p className="text-[12px] text-fg-tertiary">
-            Master of Artificial Intelligence at UTS · 42028 Deep Learning and CNN · Project #37
-          </p>
+          <p className="text-[12px] text-fg-tertiary">Master of Artificial Intelligence at UTS</p>
 
           <a
             href={REPO_URL}
