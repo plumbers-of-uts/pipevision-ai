@@ -49,7 +49,7 @@ export function RecentDetections({ refreshKey }: RecentDetectionsProps = {}) {
   if (loading) {
     return (
       <div
-        className="grid grid-cols-3 gap-3"
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"
         aria-busy="true"
         aria-label="Loading recent detections"
       >
@@ -74,7 +74,10 @@ export function RecentDetections({ refreshKey }: RecentDetectionsProps = {}) {
 
   return (
     <>
-      <ul className="grid list-none grid-cols-3 gap-3 p-0" aria-label="Recent detections">
+      <ul
+        className="grid list-none grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-0"
+        aria-label="Recent detections"
+      >
         {records.map((record) => {
           const sev = topSeverity(record);
           const style = SEV_STYLES[sev];

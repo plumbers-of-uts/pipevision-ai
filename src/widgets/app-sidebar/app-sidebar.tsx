@@ -17,6 +17,10 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/models", label: "Model Info", icon: Cpu },
 ];
 
+interface AppSidebarProps {
+  onItemClick?: () => void;
+}
+
 /**
  * AppSidebar — left navigation sidebar.
  * Structure mirrors gui-mockup.html lines 644-665.
@@ -24,7 +28,7 @@ const NAV_ITEMS: NavItem[] = [
  * Active state: accent left border + bg-overlay background.
  * Hover state: bg-elevated background.
  */
-export function AppSidebar() {
+export function AppSidebar({ onItemClick }: AppSidebarProps = {}) {
   const modelStatus = useModelStatus();
 
   return (
@@ -55,6 +59,7 @@ export function AppSidebar() {
               <NavLink
                 to={to}
                 end={to === "/"}
+                onClick={onItemClick}
                 className={({ isActive }: { isActive: boolean }) =>
                   [
                     "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors duration-150",

@@ -70,11 +70,13 @@ export function PerClassChart({ data }: PerClassChartProps = {}) {
     return () => window.removeEventListener("resize", measure);
   }, []);
 
+  const safeChartWidth = Math.max(480, width);
+
   return (
-    <div ref={containerRef}>
-      <div className="overflow-hidden">
+    <div ref={containerRef} className="w-full overflow-x-auto">
+      <div style={{ minWidth: `${safeChartWidth}px` }} className="overflow-hidden">
         <BarChart
-          width={width}
+          width={safeChartWidth}
           height={280}
           data={chartData}
           layout="vertical"
