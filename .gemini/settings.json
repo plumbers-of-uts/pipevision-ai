@@ -10,6 +10,12 @@
             "timeout": 5000
           },
           {
+            "name": "state-boundary",
+            "type": "command",
+            "command": "bun \"$GEMINI_PROJECT_DIR/.gemini/hooks/state-boundary.ts\"",
+            "timeout": 5000
+          },
+          {
             "name": "skill-injector",
             "type": "command",
             "command": "bun \"$GEMINI_PROJECT_DIR/.gemini/hooks/skill-injector.ts\"",
@@ -40,6 +46,38 @@
             "type": "command",
             "command": "bun \"$GEMINI_PROJECT_DIR/.gemini/hooks/persistent-mode.ts\"",
             "timeout": 5000
+          },
+          {
+            "name": "hud",
+            "type": "command",
+            "command": "bun \"$GEMINI_PROJECT_DIR/.gemini/hooks/hud.ts\"",
+            "timeout": 3000
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "AfterTool": [
+      {
+        "hooks": [
+          {
+            "name": "hud",
+            "type": "command",
+            "command": "bun \"$GEMINI_PROJECT_DIR/.gemini/hooks/hud.ts\"",
+            "timeout": 3000
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "name": "hud",
+            "type": "command",
+            "command": "bun \"$GEMINI_PROJECT_DIR/.gemini/hooks/hud.ts\"",
+            "timeout": 3000
           }
         ],
         "matcher": "*"
