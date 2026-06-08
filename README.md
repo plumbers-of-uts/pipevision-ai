@@ -36,18 +36,29 @@ Without these, the app builds and renders the UI but the Detect page shows a cle
 
 ## Validation Performance
 
-Numbers below are the validation-set metrics at the final training epoch
-(`model/results.csv`, epoch 150), mirrored into `model/metadata.yaml`.
+Validation-set metrics at the final training epoch (`model/results.csv`, epoch 150),
+mirrored into `model/metadata.yaml`.
 
 | Metric | Box | Mask |
 |---|---|---|
+| Precision | 0.923 | 0.827 |
+| Recall | 0.891 | 0.793 |
 | mAP@0.5 | 0.931 | 0.788 |
 | mAP@0.5:0.95 | 0.682 | 0.480 |
 
-Per-class mAP@0.5 (box) ranges from 0.986 (Misalignment) to 0.904 (Deformation) —
-see the Model Info page for the full per-class chart. FP16 ONNX is ~45 MB with an
-end-to-end (NMS-included) `[1, 100, 38]` detection output plus
-`[1, 32, 160, 160]` mask prototypes.
+Per-class (`model/per_class_metrics.csv`):
+
+| Class | mAP@0.5 (box) | mAP@0.5:0.95 (box) | mAP@0.5 (mask) | mAP@0.5:0.95 (mask) |
+|---|---|---|---|---|
+| Misalignment | 0.986 | 0.757 | 0.769 | 0.455 |
+| Disconnect | 0.969 | 0.824 | 0.753 | 0.521 |
+| Obstacle | 0.956 | 0.713 | 0.920 | 0.637 |
+| Deposition | 0.954 | 0.648 | 0.778 | 0.448 |
+| Rupture | 0.910 | 0.628 | 0.849 | 0.501 |
+| Deformation | 0.904 | 0.561 | 0.723 | 0.349 |
+
+FP16 ONNX is ~45 MB with an end-to-end (NMS-included) `[1, 100, 38]` detection
+output plus `[1, 32, 160, 160]` mask prototypes.
 
 ### Defect Classes
 
