@@ -36,5 +36,8 @@ dist/
 # oma workflow results (generated artifacts)
 .agents/results/
 
+# antigravity CLI runtime (machine-specific symlinks)
+.antigravitycli/
+
 # oma docs generated artifacts
 docs/generated/
