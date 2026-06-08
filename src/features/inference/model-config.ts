@@ -75,10 +75,18 @@ function appendCacheKey(url: string, hash: string): string {
   return `${url}${sep}v=${hash.slice(0, 8)}`;
 }
 
-// Per-class mAP is pending — the segmentation training run on the new
-// 6-class pipeline-defect dataset has not published a metrics export yet.
-// classMetrics stays null so the Models page hides the chart instead of
-// showing stale numbers. TODO(oma-deferred): fill from results.csv when available.
+// Per-class mAP@0.5 (box) on the validation set, from per_class_metrics.csv
+// (AP50_box column). "All (avg)" is the overall metrics/mAP50(B) at the final
+// epoch in results.csv (0.9314), matching the dashboard Detection Accuracy tile.
+const YOLO_CLASS_METRICS: readonly ClassMetric[] = [
+  { name: "Misalignment", map50: 0.986 },
+  { name: "Disconnect", map50: 0.969 },
+  { name: "Obstacle", map50: 0.956 },
+  { name: "Deposition", map50: 0.954 },
+  { name: "All (avg)", map50: 0.931 },
+  { name: "Rupture", map50: 0.91 },
+  { name: "Deformation", map50: 0.904 },
+];
 
 const SHARED_DATASET_SPECS: readonly ModelSpecRow[] = [
   { key: "Source", val: "Pipeline-defect segmentation set (custom)" },
@@ -120,14 +128,15 @@ const yolo26mSeg: ModelConfig = Object.freeze({
     { key: "ONNX opset", val: "17" },
     { key: "Input size", val: "640 × 640" },
     { key: "Output", val: "NMS-included (end-to-end)" },
-    { key: "mAP@0.5 (box)", val: "pending" },
-    { key: "mAP@0.5:0.95 (box)", val: "pending" },
-    { key: "mAP@0.5 (mask)", val: "pending" },
-    { key: "mAP@0.5:0.95 (mask)", val: "pending" },
+    { key: "Epochs trained", val: "150" },
+    { key: "mAP@0.5 (box)", val: "0.931 (val)" },
+    { key: "mAP@0.5:0.95 (box)", val: "0.682 (val)" },
+    { key: "mAP@0.5 (mask)", val: "0.788 (val)" },
+    { key: "mAP@0.5:0.95 (mask)", val: "0.480 (val)" },
     { key: "Framework", val: "PyTorch 2.x + Ultralytics" },
   ],
   datasetSpecs: SHARED_DATASET_SPECS,
-  classMetrics: null,
+  classMetrics: YOLO_CLASS_METRICS,
 } satisfies ModelConfig);
 
 // ─── rt-detr (placeholder) ────────────────────────────────────────────────────

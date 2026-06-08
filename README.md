@@ -34,20 +34,20 @@ To run the demo end-to-end, two pieces of build-time configuration are required:
 
 Without these, the app builds and renders the UI but the Detect page shows a clear `Model URL is not configured` error rather than failing silently. See [Configuration](#configuration).
 
-## Test Set Performance
+## Validation Performance
 
-Quantitative metrics (box / mask mAP) for the 6-class model are **pending** — the
-`results.csv` export for this training run has not been published yet, so
-`model/metadata.yaml` carries `null` and the Model Info page shows a
-"metrics pending" placeholder.
+Numbers below are the validation-set metrics at the final training epoch
+(`model/results.csv`, epoch 150), mirrored into `model/metadata.yaml`.
 
 | Metric | Box | Mask |
 |---|---|---|
-| mAP@0.5 | pending | pending |
-| mAP@0.5:0.95 | pending | pending |
+| mAP@0.5 | 0.931 | 0.788 |
+| mAP@0.5:0.95 | 0.682 | 0.480 |
 
-FP16 ONNX is ~45 MB with an end-to-end (NMS-included) `[1, 100, 38]` detection
-output plus `[1, 32, 160, 160]` mask prototypes.
+Per-class mAP@0.5 (box) ranges from 0.986 (Misalignment) to 0.904 (Deformation) —
+see the Model Info page for the full per-class chart. FP16 ONNX is ~45 MB with an
+end-to-end (NMS-included) `[1, 100, 38]` detection output plus
+`[1, 32, 160, 160]` mask prototypes.
 
 ### Defect Classes
 

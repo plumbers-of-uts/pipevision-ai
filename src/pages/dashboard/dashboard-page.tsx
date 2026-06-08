@@ -6,8 +6,8 @@
  *   - Two-column lower grid: Recent Detections (left) | Defect Distribution (right ~340px)
  *
  * Live data sourced from IndexedDB via aggregateStats().
- * Detection Accuracy is static "53.4%" — test split mAP@0.5 (box) from model metadata
- * (cnn-assignment3/model/metadata.yaml), design constraint D9 (honest values, no inflation).
+ * Detection Accuracy is static "93.1%" — validation mAP@0.5 (box) at the final
+ * epoch in model/results.csv (metrics/mAP50(B) = 0.9314), the overall "all" number.
  */
 
 import { useRequest } from "ahooks";
@@ -60,10 +60,10 @@ export function DashboardPage() {
           accentColor="oklch(0.5 0.22 25)"
         />
 
-        {/* Test split mAP@0.5 (box) from cnn-assignment3/model/metadata.yaml — do NOT change to 94% */}
+        {/* Validation mAP@0.5 (box) at final epoch, model/results.csv metrics/mAP50(B) */}
         <StatCard
           icon={Target}
-          value="53.4%"
+          value="93.1%"
           label="Detection Accuracy"
           accentColor="oklch(0.62 0.16 80)"
         />

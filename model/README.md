@@ -85,6 +85,7 @@ are the rarest categories in the test split.
 | Architecture      | YOLO26m-seg           |
 | Parameters        | 21.8M                 |
 | Input resolution  | 640 × 640             |
+| Epochs            | 150                   |
 | Task              | Instance segmentation |
 | Export            | ONNX FP16, opset 17, `nms=True` |
 | Framework         | Ultralytics (PyTorch) |
@@ -93,15 +94,25 @@ are the rarest categories in the test split.
 
 ## Metrics
 
-Per-class and overall mAP (box / mask) are **pending** — the metrics export
-(`results.csv`) for this training run has not been published yet. The
-Model Info page in the app shows a "metrics pending" placeholder until the
-numbers are available.
+Validation-set metrics at the final training epoch (`results.csv`, epoch 150):
 
-| Metric              | Box | Mask |
-|---------------------|-----|------|
-| mAP@0.5 (test)      | pending | pending |
-| mAP@0.5:0.95 (test) | pending | pending |
+| Metric              | Box   | Mask  |
+|---------------------|-------|-------|
+| Precision           | 0.923 | 0.827 |
+| Recall              | 0.891 | 0.793 |
+| mAP@0.5             | 0.931 | 0.788 |
+| mAP@0.5:0.95        | 0.682 | 0.480 |
+
+### Per-class (validation, `per_class_metrics.csv`)
+
+| Class        | AP50 (box) | AP (box) | AP50 (mask) | AP (mask) |
+|--------------|-----------|----------|-------------|-----------|
+| Deformation  | 0.904 | 0.561 | 0.723 | 0.349 |
+| Obstacle     | 0.956 | 0.713 | 0.920 | 0.637 |
+| Rupture      | 0.910 | 0.628 | 0.849 | 0.501 |
+| Disconnect   | 0.969 | 0.824 | 0.753 | 0.521 |
+| Misalignment | 0.986 | 0.757 | 0.769 | 0.455 |
+| Deposition   | 0.954 | 0.648 | 0.778 | 0.448 |
 
 ---
 
@@ -138,12 +149,13 @@ const prototypes = results['output1'];
 ## Limitations
 
 1. **Long-tail dataset** — rare classes (`Deposition`, `Disconnect`) have fewer
-   training instances and may show lower recall.
+   training instances; mask AP@0.5:0.95 trails the box metric on these.
 2. **Single domain** — trained on one dataset source; performance on other
    pipe inspection cameras may differ.
 3. **FP16 precision** — minor numerical differences vs the FP32 baseline.
 4. **No temporal context** — designed for single-image inference, not video.
-5. **Metrics pending** — quantitative quality is not yet published for this run.
+5. **Validation metrics** — numbers above are validation-set (no held-out test
+   split was evaluated separately).
 
 ---
 

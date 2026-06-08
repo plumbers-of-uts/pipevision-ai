@@ -13,12 +13,13 @@ interface ClassData {
 }
 
 const FALLBACK_chartData: ClassData[] = [
-  { name: "Deformation", map50: 0 },
-  { name: "Obstacle", map50: 0 },
-  { name: "Rupture", map50: 0 },
-  { name: "Disconnect", map50: 0 },
-  { name: "Misalignment", map50: 0 },
-  { name: "Deposition", map50: 0 },
+  { name: "Misalignment", map50: 0.986 },
+  { name: "Disconnect", map50: 0.969 },
+  { name: "Obstacle", map50: 0.956 },
+  { name: "Deposition", map50: 0.954 },
+  { name: "All (avg)", map50: 0.931 },
+  { name: "Rupture", map50: 0.91 },
+  { name: "Deformation", map50: 0.904 },
 ];
 
 // DESIGN.md HSL tokens (avoid oklch — recharts SVG renders unreliably with oklch in some browsers)

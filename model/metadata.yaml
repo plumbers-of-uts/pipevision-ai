@@ -44,14 +44,24 @@ dataset:
   val: 3319
   test: 3319
 
-# Metrics are published after the segmentation training run exports results.csv.
-# TODO(oma-deferred): fill once the per-class / overall mAP export is available.
+# Validation-set metrics from the training run (results.csv, final epoch 150)
+# and per_class_metrics.csv (AP50 = mAP@0.5, AP = mAP@0.5:0.95).
 metrics:
-  test:
-    mAP_box_0_5: null
-    mAP_box_0_5_0_95: null
-    mAP_mask_0_5: null
-    mAP_mask_0_5_0_95: null
   validation:
-    mAP_box_0_5: null
-    mAP_box_0_5_0_95: null
+    epoch: 150
+    precision_box: 0.923
+    recall_box: 0.891
+    mAP_box_0_5: 0.931
+    mAP_box_0_5_0_95: 0.682
+    precision_mask: 0.827
+    recall_mask: 0.793
+    mAP_mask_0_5: 0.788
+    mAP_mask_0_5_0_95: 0.480
+  per_class:
+    # name:            [AP50_box, AP_box, AP50_mask, AP_mask]
+    Deformation:       [0.904, 0.561, 0.723, 0.349]
+    Obstacle:          [0.956, 0.713, 0.920, 0.637]
+    Rupture:           [0.910, 0.628, 0.849, 0.501]
+    Disconnect:        [0.969, 0.824, 0.753, 0.521]
+    Misalignment:      [0.986, 0.757, 0.769, 0.455]
+    Deposition:        [0.954, 0.648, 0.778, 0.448]
