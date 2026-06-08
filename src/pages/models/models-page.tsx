@@ -113,16 +113,16 @@ export function ModelsPage() {
             <div
               className="flex h-2.5 gap-0.5 overflow-hidden rounded-full"
               role="img"
-              aria-label="Dataset split: 70% train, 20% val, 10% test"
+              aria-label="Dataset split: 70% train, 15% val, 15% test"
             >
               <div className="h-full rounded-l-full bg-accent" style={{ width: "70%" }} />
-              <div className="h-full bg-info" style={{ width: "20%" }} />
-              <div className="h-full rounded-r-full bg-severity-medium" style={{ width: "10%" }} />
+              <div className="h-full bg-info" style={{ width: "15%" }} />
+              <div className="h-full rounded-r-full bg-severity-medium" style={{ width: "15%" }} />
             </div>
             <div className="mt-1.5 flex gap-4 text-[11px]">
-              <span className="text-accent">Train 70% (686)</span>
-              <span className="text-info">Val 20% (196)</span>
-              <span className="text-severity-medium">Test 10% (98)</span>
+              <span className="text-accent">Train 70% (15,484)</span>
+              <span className="text-info">Val 15% (3,319)</span>
+              <span className="text-severity-medium">Test 15% (3,319)</span>
             </div>
           </div>
         </section>

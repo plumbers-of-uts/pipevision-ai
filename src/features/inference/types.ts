@@ -26,7 +26,7 @@ export type OutputLayout = "nc-first" | "nc-last" | "nms-included";
 export interface OutputContract {
   /** Detected from warming run dims: [1,4+nc(+nm),N] = nc-first, [1,N,4+nc(+nm)] = nc-last */
   layout: OutputLayout;
-  numClasses: 7;
+  numClasses: 6;
   /** ORT exposes float32 even for FP16 ONNX models */
   outputDtype: "float32";
   boxFormat: "xywh-center";

@@ -149,7 +149,7 @@ If the test fails (`FAIL` status), options are:
 
 ## Step 6 — Push to Hugging Face Hub
 
-Creates the `pipevision-yolo26m` model repository (public, idempotent) and uploads `model.onnx`, `metadata.yaml`, and `README.md`.
+Creates the `pipevision-yolo26m-seg` model repository (public, idempotent) and uploads `yolo26m-seg-fp16.onnx`, `metadata.yaml`, and `README.md`.
 
 ```bash
 bash model/upload.sh
@@ -160,9 +160,9 @@ Expected output:
 
 ```
 Upload complete. Public URLs:
-  Model  : https://huggingface.co/<HF_USER>/pipevision-yolo26m/resolve/main/model.onnx
-  Meta   : https://huggingface.co/<HF_USER>/pipevision-yolo26m/resolve/main/metadata.yaml
-  Card   : https://huggingface.co/<HF_USER>/pipevision-yolo26m
+  Model : https://huggingface.co/<HF_USER>/pipevision-yolo26m-seg/resolve/main/yolo26m-seg-fp16.onnx
+  Meta  : https://huggingface.co/<HF_USER>/pipevision-yolo26m-seg/resolve/main/metadata.yaml
+  Card  : https://huggingface.co/<HF_USER>/pipevision-yolo26m-seg
 ```
 
 After upload, open the model card URL to verify the repo is public and the model card renders correctly.

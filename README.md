@@ -1,6 +1,6 @@
 # PipeVision AI
 
-Sewer pipe defect detection web app, built around a YOLO26m-seg model trained on the Roboflow Sewage Defect Detection dataset.
+Pipeline defect detection web app, built around a YOLO26m-seg instance-segmentation model trained on a 6-class pipeline-defect dataset.
 
 **Project #37 · Plumbers of UTS · 42028 Deep Learning and CNN**
 
@@ -36,18 +36,22 @@ Without these, the app builds and renders the UI but the Detect page shows a cle
 
 ## Test Set Performance
 
-Numbers below come from `model/metadata.yaml` (the post-training export the demo serves).
+Quantitative metrics (box / mask mAP) for the 6-class model are **pending** — the
+`results.csv` export for this training run has not been published yet, so
+`model/metadata.yaml` carries `null` and the Model Info page shows a
+"metrics pending" placeholder.
 
 | Metric | Box | Mask |
 |---|---|---|
-| mAP@0.5 | 0.534 | 0.475 |
-| mAP@0.5:0.95 | 0.302 | 0.271 |
+| mAP@0.5 | pending | pending |
+| mAP@0.5:0.95 | pending | pending |
 
-Best checkpoint at epoch 114 / 200; FP16 ONNX is ~45 MB. Per-class mAP@0.5 (box) ranges from 0.901 (Utility intrusion) down to 0.080 (Buckling) — see the Model Info page for the full per-class table and chart.
+FP16 ONNX is ~45 MB with an end-to-end (NMS-included) `[1, 100, 38]` detection
+output plus `[1, 32, 160, 160]` mask prototypes.
 
 ### Defect Classes
 
-Buckling · Crack · Debris · Hole · Joint offset · Obstacle · Utility intrusion
+Deformation · Obstacle · Rupture · Disconnect · Misalignment · Deposition
 
 ---
 
@@ -168,8 +172,8 @@ Required environment variables:
 | `SAGEMAKER_MODEL_S3_URI` | Full S3 URI of the SageMaker `model.tar.gz` |
 | `AWS_PROFILE` | AWS CLI profile (defaults to `default`) |
 | `HF_USER` | Hugging Face username |
-| `HF_TOKEN` | HF token with write access (or run `huggingface-cli login`) |
-| `VAL_DATASET_YAML` | Absolute path to the Roboflow Ultralytics dataset config produced by Roboflow's "Export → YOLO" flow |
+| `HF_TOKEN` | HF token with write access (or run `hf auth login`) |
+| `VAL_DATASET_YAML` | Absolute path to the Ultralytics dataset config (`data.yaml`) for the 6-class pipeline-defect set |
 
 Then:
 

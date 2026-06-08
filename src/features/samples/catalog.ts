@@ -1,10 +1,10 @@
 /**
  * catalog.ts — Real CCTV sample frames for the Detect page gallery.
  *
- * Frames are raw test-split images from the Roboflow Sewage Defect Detection
- * dataset (sewage-yolo26 / test / images), one per class chosen from the
- * model's strongest qualitative predictions. Files live in `public/samples/`
- * so Vite serves them directly without a fetch round-trip through the bundler.
+ * Frames are raw test-split images from the 6-class pipeline-defect segmentation
+ * dataset, one clean representative per class picked by running the deployed
+ * yolo26m-seg model offline (see model/seed_history_inferences.py). Files live in
+ * `public/samples/` so Vite serves them directly without a fetch round-trip.
  */
 
 export interface SampleImage {
@@ -21,52 +21,45 @@ const SAMPLE_BASE = `${import.meta.env.BASE_URL}samples/`;
 
 export const SAMPLE_CATALOG: SampleImage[] = [
   {
-    id: "utility-intrusion",
-    label: "Utility intrusion",
-    expectedClass: "Utility intrusion",
-    src: `${SAMPLE_BASE}utility-intrusion.jpg`,
-    defectClasses: [6],
-  },
-  {
-    id: "hole",
-    label: "Hole",
-    expectedClass: "Hole",
-    src: `${SAMPLE_BASE}hole.jpg`,
-    defectClasses: [3],
+    id: "deformation",
+    label: "Deformation",
+    expectedClass: "Deformation",
+    src: `${SAMPLE_BASE}deformation.jpg`,
+    defectClasses: [0],
   },
   {
     id: "obstacle",
     label: "Obstacle",
     expectedClass: "Obstacle",
     src: `${SAMPLE_BASE}obstacle.jpg`,
-    defectClasses: [5],
-  },
-  {
-    id: "debris",
-    label: "Debris",
-    expectedClass: "Debris",
-    src: `${SAMPLE_BASE}debris.jpg`,
-    defectClasses: [2],
-  },
-  {
-    id: "crack",
-    label: "Crack",
-    expectedClass: "Crack",
-    src: `${SAMPLE_BASE}crack.jpg`,
     defectClasses: [1],
   },
   {
-    id: "joint-offset",
-    label: "Joint offset",
-    expectedClass: "Joint offset",
-    src: `${SAMPLE_BASE}joint-offset.jpg`,
+    id: "rupture",
+    label: "Rupture",
+    expectedClass: "Rupture",
+    src: `${SAMPLE_BASE}rupture.jpg`,
+    defectClasses: [2],
+  },
+  {
+    id: "disconnect",
+    label: "Disconnect",
+    expectedClass: "Disconnect",
+    src: `${SAMPLE_BASE}disconnect.jpg`,
+    defectClasses: [3],
+  },
+  {
+    id: "misalignment",
+    label: "Misalignment",
+    expectedClass: "Misalignment",
+    src: `${SAMPLE_BASE}misalignment.jpg`,
     defectClasses: [4],
   },
   {
-    id: "buckling",
-    label: "Buckling",
-    expectedClass: "Buckling",
-    src: `${SAMPLE_BASE}buckling.jpg`,
-    defectClasses: [0],
+    id: "deposition",
+    label: "Deposition",
+    expectedClass: "Deposition",
+    src: `${SAMPLE_BASE}deposition.jpg`,
+    defectClasses: [5],
   },
 ];

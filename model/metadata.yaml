@@ -4,16 +4,18 @@ model:
   input_shape: [1, 3, 640, 640]
   precision: fp16
   opset: 17
-  size_mb: 85
-  # SHA-256 of yolo26m-seg-fp16.onnx is published here after the SageMaker run.
-  # Used by the frontend Service Worker for cache invalidation and integrity check.
-  sha256: ""
-  # Dual-output for instance segmentation.
+  size_mb: 45
+  # SHA-256 of yolo26m-seg-fp16.onnx — used by the frontend Service Worker for
+  # cache invalidation and integrity check (mirrors VITE_MODEL_SHA256).
+  sha256: "315d02d175883534892e0b19de55dc7730e0bcc197877eca969347abfb42420e"
+  # End-to-end (NMS-included) instance-segmentation export.
   outputs:
-    - name: detections
-      shape: [1, 43, 8400]   # 4 + 7 classes + 32 mask coefficients
-    - name: prototypes
-      shape: [1, 32, 160, 160]
+    - name: output0
+      shape: [1, 100, 38]    # max_det × (x1,y1,x2,y2,conf,classId + 32 mask coeffs)
+      dtype: float32
+    - name: output1
+      shape: [1, 32, 160, 160]  # mask prototypes
+      dtype: float16
 
 mask:
   channels: 32
@@ -21,28 +23,35 @@ mask:
 
 task: segment
 
+# Class IDs and order MUST match data.yaml and src/features/history-store/classes.ts.
 classes:
-  - { id: 0, name: Buckling,          severity: high }
-  - { id: 1, name: Crack,             severity: medium }
-  - { id: 2, name: Debris,            severity: low }
-  - { id: 3, name: Hole,              severity: critical }
-  - { id: 4, name: Joint offset,      severity: medium }
-  - { id: 5, name: Obstacle,          severity: high }
-  - { id: 6, name: Utility intrusion, severity: high }
+  - { id: 0, name: Deformation,  severity: high }
+  - { id: 1, name: Obstacle,     severity: high }
+  - { id: 2, name: Rupture,      severity: critical }
+  - { id: 3, name: Disconnect,   severity: critical }
+  - { id: 4, name: Misalignment, severity: medium }
+  - { id: 5, name: Deposition,   severity: low }
 
 inference:
   conf_threshold: 0.25
   iou_threshold: 0.45
   max_detections: 100
 
-# Metrics published after Tier 2 SageMaker run completes.
-# Box numbers are the apples-to-apples PartC baseline comparison (model.val).
+dataset:
+  source: Pipeline-defect segmentation set (custom)
+  total_images: 22122
+  train: 15484
+  val: 3319
+  test: 3319
+
+# Metrics are published after the segmentation training run exports results.csv.
+# TODO(oma-deferred): fill once the per-class / overall mAP export is available.
 metrics:
   test:
-    mAP_box_0_5: 0.536           # baseline yolo26m detect was 0.440 (+0.096)
-    mAP_box_0_5_0_95: 0.276
-    mAP_mask_0_5: null           # filled after seg training
+    mAP_box_0_5: null
+    mAP_box_0_5_0_95: null
+    mAP_mask_0_5: null
     mAP_mask_0_5_0_95: null
   validation:
-    mAP_box_0_5: 0.477
-    mAP_box_0_5_0_95: 0.217
+    mAP_box_0_5: null
+    mAP_box_0_5_0_95: null

@@ -1,6 +1,7 @@
 /**
  * per-class-chart.tsx — Horizontal recharts bar of mAP@0.5 per class (sorted desc).
- * Numbers come from cnn-assignment3/model/per_class_metrics.csv (box, test split).
+ * Rendered only when the active model exposes `classMetrics`; the fallback below
+ * is a placeholder for the 6-class pipeline-defect model whose metrics are pending.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -12,14 +13,12 @@ interface ClassData {
 }
 
 const FALLBACK_chartData: ClassData[] = [
-  { name: "Utility intrusion", map50: 0.901 },
-  { name: "Hole", map50: 0.832 },
-  { name: "Obstacle", map50: 0.704 },
-  { name: "Debris", map50: 0.597 },
-  { name: "All (avg)", map50: 0.534 },
-  { name: "Crack", map50: 0.397 },
-  { name: "Joint offset", map50: 0.225 },
-  { name: "Buckling", map50: 0.08 },
+  { name: "Deformation", map50: 0 },
+  { name: "Obstacle", map50: 0 },
+  { name: "Rupture", map50: 0 },
+  { name: "Disconnect", map50: 0 },
+  { name: "Misalignment", map50: 0 },
+  { name: "Deposition", map50: 0 },
 ];
 
 // DESIGN.md HSL tokens (avoid oklch — recharts SVG renders unreliably with oklch in some browsers)

@@ -102,6 +102,25 @@ class PipeVisionDatabase extends Dexie {
           .equals("yolo26m-pipevision-fp16")
           .delete();
       });
+
+    /**
+     * Version 4 — FULL RESET for the 6-class pipeline-defect retrain
+     * (Deformation / Obstacle / Rupture / Disconnect / Misalignment / Deposition).
+     *
+     * The new model changes class IDs, labels, severities and colors, so EVERY
+     * pre-existing record is stale — both the demo seed AND user-saved
+     * inspections produced by the old 7-class model (their `className` /
+     * `severity` / `color` were baked in at save time and would render with
+     * obsolete labels). We therefore clear the entire store; `seedIfEmpty`
+     * then repopulates the regenerated 6-class demo manifest on next launch.
+     */
+    this.version(4)
+      .stores({
+        records: "id, createdAt, modelVersion, *detections.classId",
+      })
+      .upgrade(async (tx) => {
+        await tx.table<HistoryRecord, string>("records").clear();
+      });
   }
 }
 

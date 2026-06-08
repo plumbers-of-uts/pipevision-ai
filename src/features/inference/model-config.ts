@@ -75,26 +75,20 @@ function appendCacheKey(url: string, hash: string): string {
   return `${url}${sep}v=${hash.slice(0, 8)}`;
 }
 
-const YOLO_CLASS_METRICS: readonly ClassMetric[] = [
-  { name: "Utility intrusion", map50: 0.901 },
-  { name: "Hole", map50: 0.832 },
-  { name: "Obstacle", map50: 0.704 },
-  { name: "Debris", map50: 0.597 },
-  { name: "All (avg)", map50: 0.534 },
-  { name: "Crack", map50: 0.397 },
-  { name: "Joint offset", map50: 0.225 },
-  { name: "Buckling", map50: 0.08 },
-];
+// Per-class mAP is pending — the segmentation training run on the new
+// 6-class pipeline-defect dataset has not published a metrics export yet.
+// classMetrics stays null so the Models page hides the chart instead of
+// showing stale numbers. TODO(oma-deferred): fill from results.csv when available.
 
 const SHARED_DATASET_SPECS: readonly ModelSpecRow[] = [
-  { key: "Source", val: "Roboflow Sewage Defect Detection" },
-  { key: "Total images", val: "980" },
-  { key: "Train split", val: "70% (686 images)" },
-  { key: "Val split", val: "20% (196 images)" },
-  { key: "Test split", val: "10% (98 images)" },
-  { key: "Classes", val: "7 defect categories" },
-  { key: "Class imbalance", val: "22.5:1 long-tail (Crack dominant)" },
-  { key: "Annotation", val: "YOLO format bounding boxes" },
+  { key: "Source", val: "Pipeline-defect segmentation set (custom)" },
+  { key: "Total images", val: "22,122" },
+  { key: "Train split", val: "70% (15,484 images)" },
+  { key: "Val split", val: "15% (3,319 images)" },
+  { key: "Test split", val: "15% (3,319 images)" },
+  { key: "Classes", val: "6 defect categories" },
+  { key: "Class imbalance", val: "long-tail (Deposition / Disconnect rare)" },
+  { key: "Annotation", val: "YOLO instance segmentation (polygons)" },
 ];
 
 // ─── yolo26m-seg ──────────────────────────────────────────────────────────────
@@ -113,7 +107,7 @@ const yolo26mSeg: ModelConfig = Object.freeze({
   confThreshold: 0.25,
   iouThreshold: 0.45,
   maxDetections: 100,
-  numClasses: 7,
+  numClasses: 6,
   inputSize: 640,
   modelTask: envTask,
   maskChannels: envTask === "segment" ? 32 : 0,
@@ -125,15 +119,15 @@ const yolo26mSeg: ModelConfig = Object.freeze({
     { key: "Model size", val: "45 MB" },
     { key: "ONNX opset", val: "17" },
     { key: "Input size", val: "640 × 640" },
-    { key: "mAP@0.5 (box)", val: "0.534 (test)" },
-    { key: "mAP@0.5:0.95 (box)", val: "0.302 (test)" },
-    { key: "mAP@0.5 (mask)", val: "0.475 (test)" },
-    { key: "mAP@0.5:0.95 (mask)", val: "0.271 (test)" },
-    { key: "Best epoch", val: "114 / 200" },
+    { key: "Output", val: "NMS-included (end-to-end)" },
+    { key: "mAP@0.5 (box)", val: "pending" },
+    { key: "mAP@0.5:0.95 (box)", val: "pending" },
+    { key: "mAP@0.5 (mask)", val: "pending" },
+    { key: "mAP@0.5:0.95 (mask)", val: "pending" },
     { key: "Framework", val: "PyTorch 2.x + Ultralytics" },
   ],
   datasetSpecs: SHARED_DATASET_SPECS,
-  classMetrics: YOLO_CLASS_METRICS,
+  classMetrics: null,
 } satisfies ModelConfig);
 
 // ─── rt-detr (placeholder) ────────────────────────────────────────────────────
@@ -154,7 +148,7 @@ const rtDetr: ModelConfig = Object.freeze({
   confThreshold: 0.25,
   iouThreshold: 0.45,
   maxDetections: 100,
-  numClasses: 7,
+  numClasses: 6,
   inputSize: 640,
   modelTask: "detect",
   maskChannels: 0,
