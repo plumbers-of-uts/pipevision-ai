@@ -191,10 +191,11 @@ After upload, point the frontend at the model URL via `VITE_MODEL_URL`; runtime 
 
 ## What's left
 
-Code-wise the demo is complete. To actually run it you need:
+The demo is live at https://plumbers-of-uts.github.io/pipevision-ai/ — the 6-class
+`yolo26m-seg` model is published to Hugging Face Hub and wired into the GitHub Pages build.
 
-- [ ] Hugging Face Hub account + write token; run the four `model:*` tasks above to publish the ONNX model.
-- [ ] Set `VITE_MODEL_URL` and `VITE_MODEL_SHA256` (see [Configuration](#configuration)).
+- [x] Publish the ONNX model to Hugging Face Hub ([gracefullight/pipevision-yolo26m-seg](https://huggingface.co/gracefullight/pipevision-yolo26m-seg)).
+- [x] Set `VITE_MODEL_URL` and `VITE_MODEL_SHA256` (Actions Variables + `.env.example`).
 - [ ] (Optional) Deploy a Gradio Spaces fallback and set `VITE_SPACES_URL`.
 
 Tracked in [`docs/plans/work/001-browser-inference-finalization.md`](docs/plans/work/001-browser-inference-finalization.md) and [`docs/plans/work/tech-debt-tracker.md`](docs/plans/work/tech-debt-tracker.md):
