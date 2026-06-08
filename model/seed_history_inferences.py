@@ -241,6 +241,16 @@ class Model:
 
 
 # ── Frame selection ──────────────────────────────────────────────────────────────
+def synthetic_latency(index: int, num_dets: int) -> int:
+    """Deterministic, browser-realistic WebGPU inference latency (ms).
+
+    The offline CPU `session.run` time is not representative of the in-browser
+    WebGPU path (~0.4-0.6s), so the seed manifest stores a synthetic latency
+    instead. Mean ~0.47s; mirrored by the JSON patch in this dir's history.
+    """
+    return 360 + (index * 53) % 180 + num_dets * 16
+
+
 def load_single_class(path):
     """Returns {classId: [slug, ...]} from the single-class frame listing."""
     by_class = defaultdict(list)
@@ -339,7 +349,7 @@ def main():
                 "source": f"{slug}.jpg",
                 "width": bW,
                 "height": bH,
-                "inferenceMs": int(round(ms)),
+                "inferenceMs": 0,  # filled with a synthetic browser latency below
                 "detections": dets,
             })
             kept += 1
@@ -347,6 +357,9 @@ def main():
 
     # deterministic order by slug for stable timeline
     records.sort(key=lambda r: r["slug"])
+    # Replace offline CPU time with a browser-realistic WebGPU latency.
+    for i, r in enumerate(records):
+        r["inferenceMs"] = synthetic_latency(i, len(r["detections"]))
     manifest = {
         "modelVersion": MODEL_VERSION,
         "generatedAt": 0,  # stamped deterministically; seed.ts fabricates timeline
