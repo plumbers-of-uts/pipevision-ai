@@ -45,7 +45,7 @@ function AppContent() {
       case "/credits":
         return "Credits";
       default:
-        return "PipeVision AI";
+        return "FlowBust";
     }
   };
 

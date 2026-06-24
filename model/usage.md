@@ -1,4 +1,4 @@
-# PipeVision Model Pipeline — Usage Guide
+# FlowBust Model Pipeline — Usage Guide
 
 Step-by-step instructions for running the Sprint 1 model conversion pipeline locally.
 
@@ -106,7 +106,7 @@ uv run --project model python model/export.py
 Expected output:
 
 ```
-PipeVision — YOLO26m ONNX Export
+FlowBust — YOLO26m ONNX Export
 Input checkpoint : model/artifacts/best.pt
 ONNX FP16 output : model/artifacts/yolo26m-fp16.onnx
 ORT opt output   : model/artifacts/yolo26m-fp16-opt.onnx

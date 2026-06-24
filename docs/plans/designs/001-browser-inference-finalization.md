@@ -9,7 +9,7 @@
 
 ## TL;DR
 
-PipeVision AI의 Detect 페이지에 박혀 있는 `runMockInference()` 스텁(1.5s + 랜덤 bbox)을 제거하고, 이미 HF Hub에 게시된 FP16 ONNX 모델을 브라우저에서 직접 실행하도록 결선한다. 단일 `InferenceService` 싱글톤 + `ModelProvider` 5-phase 상태머신 + Service Worker 모델 캐시 + HF Spaces 폴백 버튼까지 포함한다. 기존 플랜의 D1–D15 결정과 모두 정합한다.
+FlowBust의 Detect 페이지에 박혀 있는 `runMockInference()` 스텁(1.5s + 랜덤 bbox)을 제거하고, 이미 HF Hub에 게시된 FP16 ONNX 모델을 브라우저에서 직접 실행하도록 결선한다. 단일 `InferenceService` 싱글톤 + `ModelProvider` 5-phase 상태머신 + Service Worker 모델 캐시 + HF Spaces 폴백 버튼까지 포함한다. 기존 플랜의 D1–D15 결정과 모두 정합한다.
 
 ---
 

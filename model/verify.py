@@ -419,7 +419,7 @@ def main() -> None:
     input_pt, onnx_model, val_yaml = _resolve_paths()
 
     print("=" * 60)
-    print("PipeVision — PT vs ONNX mAP Regression Test")
+    print("FlowBust — PT vs ONNX mAP Regression Test")
     print("=" * 60)
     print(f"PT checkpoint  : {input_pt}")
     print(f"ONNX model     : {onnx_model}")

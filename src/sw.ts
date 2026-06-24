@@ -1,5 +1,5 @@
 /**
- * sw.ts — PipeVision AI Service Worker via Serwist.
+ * sw.ts — FlowBust Service Worker via Serwist.
  *
  * Strategies:
  *   - Precache app shell (HTML/CSS/JS via @serwist/vite injection point).

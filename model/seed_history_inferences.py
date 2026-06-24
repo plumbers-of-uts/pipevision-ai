@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """seed_history_inferences.py — Offline ONNX inference to (re)generate the
-PipeVision sample gallery + Inspection History seed manifest.
+FlowBust sample gallery + Inspection History seed manifest.
 
 This mirrors the browser inference pipeline 1:1 so the static demo data looks
 identical to live, in-browser predictions:

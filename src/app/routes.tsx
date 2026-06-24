@@ -7,7 +7,7 @@ import { HistoryPage } from "@/pages/history";
 import { ModelsPage } from "@/pages/models";
 
 /**
- * Route configuration for the PipeVision AI SPA.
+ * Route configuration for the FlowBust SPA.
  * HashRouter is used for GitHub Pages compatibility (no server-side routing needed).
  *
  * Route map:

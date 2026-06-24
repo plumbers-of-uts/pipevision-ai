@@ -1,4 +1,4 @@
-# PipeVision Extension Design
+# FlowBust Extension Design
 
 **Project:** Plumbing Defect Detection & Pipe Inspection System #37
 **Team:** Plumbers of UTS (Bo Zhao, Jadyn Braganza, Eunkwang Shin)

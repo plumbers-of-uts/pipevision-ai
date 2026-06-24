@@ -47,7 +47,7 @@ export function AppSidebar({ onItemClick }: AppSidebarProps = {}) {
           height={36}
         />
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-fg-primary">PipeVision AI</div>
+          <div className="truncate text-sm font-semibold text-fg-primary">FlowBust</div>
           <div className="truncate text-xs text-fg-secondary">Sewer Defect Detection</div>
         </div>
       </div>

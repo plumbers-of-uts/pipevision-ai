@@ -1,6 +1,6 @@
 {
-  "name": "PipeVision AI",
-  "short_name": "PipeVision",
+  "name": "FlowBust",
+  "short_name": "FlowBust",
   "description": "Sewer pipe defect detection using YOLO deep learning model.",
   "icons": [
     { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" },

@@ -119,7 +119,7 @@ def main() -> None:
     input_pt, onnx_fp16, onnx_opt = _resolve_paths()
 
     print("=" * 60)
-    print("PipeVision — YOLO26m ONNX Export")
+    print("FlowBust — YOLO26m ONNX Export")
     print("=" * 60)
     print(f"Input checkpoint : {input_pt}")
     print(f"ONNX FP16 output : {onnx_fp16}")

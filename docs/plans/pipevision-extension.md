@@ -1,4 +1,4 @@
-# Execution Plan — PipeVision AI Extension
+# Execution Plan — FlowBust Extension
 
 **Session:** `pipevision-ext-001`
 **Created:** 2026-04-30

@@ -10,7 +10,7 @@ tags:
 pipeline_tag: image-segmentation
 ---
 
-# PipeVision YOLO26m-seg — Pipeline Defect Segmentation (ONNX FP16)
+# FlowBust YOLO26m-seg — Pipeline Defect Segmentation (ONNX FP16)
 
 **Model**: `yolo26m-seg-pipevision-fp16`
 **Format**: ONNX FP16 (opset 17)
@@ -32,7 +32,7 @@ CCTV inspection images. It is exported from a YOLO26m-seg PyTorch checkpoint
 The model is exported **end-to-end with NMS included** in the ONNX graph
 (`output0` already carries post-NMS detections capped at 100). Client code
 decodes the fixed `[1, 100, 38]` tensor directly — no separate NMS pass is
-required, though PipeVision still runs a light client-side IoU dedup as a guard.
+required, though FlowBust still runs a light client-side IoU dedup as a guard.
 
 Each detection's instance mask is reconstructed from the 32 mask coefficients
 and the shared `output1` prototypes: `sigmoid(coeffs · prototypes)`, thresholded

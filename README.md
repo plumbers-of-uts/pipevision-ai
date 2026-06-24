@@ -1,4 +1,4 @@
-# PipeVision AI
+# FlowBust
 
 Pipeline defect detection web app, built around a YOLO26m-seg instance-segmentation model trained on a 6-class pipeline-defect dataset.
 
