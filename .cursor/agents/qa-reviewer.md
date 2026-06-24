@@ -1,7 +1,6 @@
 ---
 name: qa-reviewer
 description: OWASP security, performance, accessibility, code quality review agent
-tools: []
 model: inherit
 skills:
   - oma-qa
@@ -40,7 +39,7 @@ CHARTER_CHECK:
 
 1. **Security** (OWASP Top 10)
 2. **Performance** (N+1 queries, re-renders, bundle size)
-3. **Accessibility** (WCAG 2.1 AA)
+3. **Accessibility** (WCAG 2.2 AA)
 4. **Code Quality** (naming, error handling, tests)
 
 ## Output Format

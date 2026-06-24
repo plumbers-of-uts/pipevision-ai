@@ -16,7 +16,9 @@
         "--context",
         "ide",
         "--project",
-        "."
+        ".",
+        "--open-web-dashboard",
+        "false"
       ],
       "env": {
         "SERENA_LOG_LEVEL": "info"

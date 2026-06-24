@@ -1715,6 +1715,94 @@
         "ko": ["리캡"],
         "ja": ["リキャップ"]
       }
+    },
+    "video": {
+      "persistent": false,
+      "keywords": {
+        "*": ["oma-video", "remotion", "shorts", "reels", "screencast"],
+        "en": [
+          "generate video",
+          "generate a video",
+          "create video",
+          "create a video",
+          "make a video",
+          "short-form video",
+          "shorts video",
+          "reels video",
+          "youtube short",
+          "tiktok video",
+          "explainer video",
+          "demo video",
+          "walkthrough video",
+          "screencast video",
+          "turn this into a video",
+          "video from readme",
+          "video from code"
+        ],
+        "ko": [
+          "영상 만들어",
+          "영상 만들어줘",
+          "영상 생성",
+          "영상 생성해",
+          "영상 생성해줘",
+          "비디오 만들어",
+          "비디오 만들어줘",
+          "숏폼 만들어",
+          "숏폼 영상",
+          "쇼츠 만들어",
+          "쇼츠 영상",
+          "릴스 만들어",
+          "릴스 영상",
+          "데모 영상",
+          "설명 영상",
+          "설명 영상 만들어",
+          "스크린캐스트",
+          "영상으로 만들어"
+        ],
+        "ja": [
+          "動画を生成",
+          "動画生成",
+          "動画を作",
+          "動画を作成",
+          "ショート動画",
+          "リール動画",
+          "解説動画",
+          "デモ動画",
+          "スクリーンキャスト"
+        ],
+        "zh": [
+          "生成视频",
+          "生成一段视频",
+          "制作视频",
+          "做个视频",
+          "短视频",
+          "竖屏短视频",
+          "讲解视频",
+          "演示视频",
+          "录屏视频"
+        ],
+        "es": [
+          "generar video",
+          "crear video",
+          "hazme un video",
+          "video corto",
+          "video explicativo"
+        ],
+        "fr": [
+          "générer une vidéo",
+          "créer une vidéo",
+          "fais-moi une vidéo",
+          "vidéo courte",
+          "vidéo explicative"
+        ],
+        "de": [
+          "video generieren",
+          "video erstellen",
+          "erstelle ein video",
+          "kurzvideo",
+          "erklärvideo"
+        ]
+      }
     }
   },
   "skills": {
@@ -2044,7 +2132,7 @@
     },
     "oma-mobile": {
       "keywords": {
-        "*": ["riverpod", "cupertino"],
+        "*": ["riverpod", "cupertino", "swiftui", "swift-openapi-generator"],
         "en": [
           "flutter screen",
           "react native view",
@@ -2055,7 +2143,11 @@
           "dart code",
           "riverpod state",
           "mobile app",
-          "android ios"
+          "android ios",
+          "swift native",
+          "swift ios",
+          "swiftui view",
+          "ios native app"
         ],
         "ko": [
           "플러터 화면",
@@ -2550,6 +2642,35 @@
         "zh": ["帮我查", "搜一下", "找找文档", "找个库", "查参考资料"]
       }
     },
+    "oma-slide": {
+      "keywords": {
+        "*": ["pptx", "keynote"],
+        "en": [
+          "make a presentation",
+          "create slides",
+          "build a deck",
+          "slide deck",
+          "pitch deck",
+          "presentation slides",
+          "html slides",
+          "convert pptx"
+        ],
+        "ko": [
+          "발표자료 만들어",
+          "슬라이드 만들어",
+          "프레젠테이션 만들어",
+          "피피티 만들어",
+          "덱 만들어"
+        ],
+        "ja": [
+          "プレゼン作って",
+          "スライド作って",
+          "発表資料作って",
+          "デッキ作って"
+        ],
+        "zh": ["做个演示", "做幻灯片", "做个PPT", "做演示文稿"]
+      }
+    },
     "oma-tf-infra": {
       "keywords": {
         "*": ["terraform", "OIDC", "IAM"],
@@ -2759,6 +2880,93 @@
         ]
       }
     },
+    "oma-video": {
+      "keywords": {
+        "*": ["oma-video", "remotion", "shorts", "reels", "screencast"],
+        "en": [
+          "generate video",
+          "generate a video",
+          "create video",
+          "create a video",
+          "make a video",
+          "short-form video",
+          "shorts video",
+          "reels video",
+          "youtube short",
+          "tiktok video",
+          "explainer video",
+          "demo video",
+          "walkthrough video",
+          "screencast video",
+          "turn this into a video",
+          "video from readme",
+          "video from code"
+        ],
+        "ko": [
+          "영상 만들어",
+          "영상 만들어줘",
+          "영상 생성",
+          "영상 생성해",
+          "영상 생성해줘",
+          "비디오 만들어",
+          "비디오 만들어줘",
+          "숏폼 만들어",
+          "숏폼 영상",
+          "쇼츠 만들어",
+          "쇼츠 영상",
+          "릴스 만들어",
+          "릴스 영상",
+          "데모 영상",
+          "설명 영상",
+          "설명 영상 만들어",
+          "스크린캐스트",
+          "영상으로 만들어"
+        ],
+        "ja": [
+          "動画を生成",
+          "動画生成",
+          "動画を作",
+          "動画を作成",
+          "ショート動画",
+          "リール動画",
+          "解説動画",
+          "デモ動画",
+          "スクリーンキャスト"
+        ],
+        "zh": [
+          "生成视频",
+          "生成一段视频",
+          "制作视频",
+          "做个视频",
+          "短视频",
+          "竖屏短视频",
+          "讲解视频",
+          "演示视频",
+          "录屏视频"
+        ],
+        "es": [
+          "generar video",
+          "crear video",
+          "hazme un video",
+          "video corto",
+          "video explicativo"
+        ],
+        "fr": [
+          "générer une vidéo",
+          "créer une vidéo",
+          "fais-moi une vidéo",
+          "vidéo courte",
+          "vidéo explicative"
+        ],
+        "de": [
+          "video generieren",
+          "video erstellen",
+          "erstelle ein video",
+          "kurzvideo",
+          "erklärvideo"
+        ]
+      }
+    },
     "oma-voice": {
       "keywords": {
         "*": ["voicebox", "oma-voice", "tts", "stt"],
@@ -2825,6 +3033,54 @@
           "会议转录"
         ]
       }
+    },
+    "oma-refactor": {
+      "keywords": {
+        "*": ["oma-refactor"],
+        "en": [
+          "refactor this",
+          "refactoring plan",
+          "extract class",
+          "extract method",
+          "reduce complexity",
+          "measure complexity",
+          "code smell",
+          "technical debt",
+          "characterization test",
+          "hotspot analysis",
+          "split this class",
+          "clean up this code"
+        ],
+        "ko": [
+          "리팩토링",
+          "리팩터링",
+          "복잡도 줄여",
+          "복잡도 측정",
+          "코드 스멜",
+          "기술 부채",
+          "클래스 분리",
+          "메서드 추출",
+          "코드 정리해줘"
+        ],
+        "ja": [
+          "リファクタリング",
+          "複雑度を下げ",
+          "複雑度を測定",
+          "コードスメル",
+          "技術的負債",
+          "クラスを分割",
+          "メソッド抽出"
+        ],
+        "zh": [
+          "重构",
+          "降低复杂度",
+          "测量复杂度",
+          "代码异味",
+          "技术债",
+          "拆分类",
+          "提取方法"
+        ]
+      }
     }
   },
   "informationalPatterns": {
@@ -2862,7 +3118,8 @@
       "what about",
       "why build",
       "why create",
-      "why make"
+      "why make",
+      "artifact"
     ],
     "ko": [
       "뭐야",
@@ -2895,7 +3152,9 @@
       "코드를 한번",
       "그 워크플로우",
       "이 워크플로우",
-      "워크플로우 자체"
+      "워크플로우 자체",
+      "고도화",
+      "아티팩트"
     ],
     "ja": [
       "とは",
@@ -2964,7 +3223,7 @@
       "wykryto"
     ]
   },
-  "excludedWorkflows": ["tools", "stack-set"],
+  "excludedWorkflows": ["tools", "stack-set", "schedule"],
   "cjkScripts": ["ko", "ja", "zh"],
   "extensionRouting": {
     "frontend-engineer": [

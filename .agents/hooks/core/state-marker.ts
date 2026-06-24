@@ -24,6 +24,7 @@ export interface StateIndex {
   active: Record<string, string>;
 }
 
+// Mirror cli/constants/paths.ts → AGENTS_STATE_SESSIONS_DIR (hooks cannot import cli/).
 export const STATE_ROOT = join(".agents", "state", "sessions");
 
 export function sessionsDir(projectDir: string): string {
@@ -105,7 +106,16 @@ export function updateIndex(
     atomicWriteJson(path, next);
     return next;
   }
-  throw new Error(`CAS update failed for ${path}`);
+  // D69: CAS retries exhausted. Do NOT throw or corrupt _index.json — leave it
+  // stale and emit a diagnostic. The next hook fire or `oma state repair`
+  // re-derives active pointers from events.jsonl.
+  process.stderr.write(
+    `[oma] _index.json CAS retries exhausted (${maxRetries}); leaving it stale.\n`,
+  );
+  process.stderr.write(
+    "[oma]   hint: run 'oma state repair' to re-derive active pointers\n",
+  );
+  return readIndex(projectDir);
 }
 
 export function getActiveSid(

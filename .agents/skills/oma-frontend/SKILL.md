@@ -91,7 +91,7 @@ Build, modify, and verify React/Next.js/TypeScript user interfaces that follow p
 
 ### Tools and instruments
 - React, Next.js, TypeScript, TailwindCSS v4, shadcn/ui
-- `ahooks`, `es-toolkit`, `nuqs`, TanStack Query, Jotai, TanStack React Form, `zod`
+- `ahooks`, `es-toolkit`, `nuqs`, TanStack Query, Jotai/Zustand, TanStack React Form, `zod`
 - Lint, typecheck, tests, and browser inspection when applicable
 
 ### Canonical workflow path
@@ -125,7 +125,8 @@ Then run the project's frontend verification commands, typically lint, typecheck
 3. Keep server/client boundaries explicit: Server Components for static/layout work, Client Components for interaction and hooks.
 4. Use project sources of truth for design tokens, i18n strings, and shared utilities before adding local alternatives.
 5. Run the execution checklist before handoff and include relevant verification results.
-6. **Next.js 16 `proxy.ts` is mandatory; `middleware.ts` is BANNED**: this project is Next.js 16+. `middleware.ts` is NOT "deprecated"; it is forbidden, touch it and you die. The canonical request-proxy / auth-gate file is `proxy.ts` (root or `src/`) exporting a `proxy` function. NEVER create, recommend, suggest, or "restore" `middleware.ts`. NEVER flag `proxy.ts` as dead code, unused, or not-wired. Any such finding is a fatal self-error: retract it immediately and write `proxy.ts`.
+6. **Self-describing file names**: every new file follows the File Naming convention in `../../rules/frontend.md` §Naming Conventions — domain + role readable from the basename alone (`order-summary-card.tsx`, `use-order-polling.ts`, `cart.atoms.ts`). Grab-bag names (`utils.ts`, `helpers.ts`, `misc.ts`) and version suffixes (`*-v2`, `*-final`) are banned.
+7. **Next.js 16 `proxy.ts` is mandatory; `middleware.ts` is BANNED**: this project is Next.js 16+. `middleware.ts` is NOT "deprecated"; it is forbidden, touch it and you die. The canonical request-proxy / auth-gate file is `proxy.ts` (root or `src/`) exporting a `proxy` function. NEVER create, recommend, suggest, or "restore" `middleware.ts`. NEVER flag `proxy.ts` as dead code, unused, or not-wired. Any such finding is a fatal self-error: retract it immediately and write `proxy.ts`.
 
 ### Libraries
 
@@ -133,17 +134,22 @@ Then run the project's frontend verification commands, typically lint, typecheck
 |----------|---------|
 | Framework | `next@16+` (App Router) + `react@19+`; `next < 16` is BANNED |
 | Date | `luxon` |
-| Styling | `TailwindCSS v4` + `shadcn/ui` |
+| Styling | `TailwindCSS v4` + `shadcn/ui` (Base UI engine; see `resources/tech-stack.md`) |
 | Hooks | `ahooks` (pre-made hooks preferred) |
 | Utils | `es-toolkit` (first choice) |
+| Types | `type-fest` (TS type utilities not in the standard lib: `SetRequired`, `Merge`, `JsonValue`, `Promisable`, etc.; built-in `Partial`/`Pick`/`Omit` stay first choice) |
 | State (URL) | `nuqs` |
 | State (Server) | `TanStack Query` |
-| State (Client) | `Jotai` (minimize use) |
+| State (Client) | `Jotai` or `Zustand` (intent-based, no default; minimize use — see `resources/tech-stack.md`) |
 | Forms | `@tanstack/react-form` + `zod` |
 | Auth | `better-auth` (client SDK only; never import server library or database adapters) |
 | Animation | `motion`; import from `motion/react`. `framer-motion` (legacy package name) is BANNED. |
 
 ### Shadcn Workflow
+
+- **Engine default: Base UI** (`components.json` → `style: "base-*"`). Radix (`radix-*`) is a
+  reasoned fallback for existing Radix codebases only; no big-bang migration. Details in
+  `resources/tech-stack.md` §shadcn/ui Primitive Engine.
 
 1. Search: `shadcn_search_items_in_registries`
 2. Review: `shadcn_get_item_examples_from_registries`
