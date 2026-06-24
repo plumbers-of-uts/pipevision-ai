@@ -5,31 +5,18 @@
  *   1. Architecture summary (from MODEL_REGISTRY[activeId].archSpecs)
  *   2. Dataset info (from MODEL_REGISTRY[activeId].datasetSpecs)
  *   3. PerClassChart — rendered only when the active model has class metrics
- *   4. Credits — team members
+ *
+ * Team credits live on the dedicated Credits page (src/pages/credits).
  *
  * The active model is resolved from active-model-store (defaults to the
  * configured model; the sidebar selector has been removed).
  */
 
-import { Brain, ChartLine, Database, Github, Users } from "lucide-react";
+import { Brain, ChartLine, Database } from "lucide-react";
 
 import { useActiveModelId } from "@/features/inference/active-model-store";
 import { MODEL_REGISTRY } from "@/features/inference/model-config";
 import { PerClassChart } from "@/widgets/per-class-chart";
-
-// ─── Credits ──────────────────────────────────────────────────────────────────
-
-interface TeamMember {
-  name: string;
-  /** Optional personal GitHub profile URL — renders the name as a link. */
-  github?: string;
-}
-
-const TEAM_MEMBERS: readonly TeamMember[] = [
-  { name: "Eunkwang Shin", github: "https://github.com/gracefullight" },
-  { name: "Bo Zhao" },
-  { name: "Jaydn Braganza" },
-];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -148,45 +135,6 @@ export function ModelsPage() {
           </p>
         </section>
       )}
-
-      {/* Credits */}
-      <section
-        className="rounded-lg border border-border-default bg-bg-surface p-5"
-        aria-label="Project credits"
-      >
-        <SectionHeading icon={Users} title="Credits" />
-        <div className="flex flex-col gap-4">
-          <div>
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.5px] text-fg-tertiary">
-              Team — Plumbers of UTS
-            </div>
-            <ul className="flex flex-wrap gap-2">
-              {TEAM_MEMBERS.map((member) => {
-                const chipClass =
-                  "inline-flex items-center rounded-md border border-border-default bg-bg-base px-3 py-1.5 text-[12px] font-medium text-fg-primary";
-                return (
-                  <li key={member.name} className="flex">
-                    {member.github ? (
-                      <a
-                        href={member.github}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`gap-1.5 transition-colors duration-150 hover:bg-bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus ${chipClass}`}
-                        aria-label={`${member.name} on GitHub`}
-                      >
-                        <Github className="size-3 text-fg-tertiary" aria-hidden={true} />
-                        {member.name}
-                      </a>
-                    ) : (
-                      <span className={chipClass}>{member.name}</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </div>
-      </section>
     </main>
   );
 }

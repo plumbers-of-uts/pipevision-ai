@@ -1,4 +1,4 @@
-import { Camera, Cpu, History, LayoutDashboard, Menu, ScanSearch } from "lucide-react";
+import { Camera, Cpu, History, LayoutDashboard, Menu, ScanSearch, Users } from "lucide-react";
 import { useState } from "react";
 import { HashRouter, useLocation, useNavigate, useRoutes } from "react-router-dom";
 
@@ -21,6 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/detect", label: "Detect", icon: ScanSearch },
   { to: "/history", label: "History", icon: History },
   { to: "/models", label: "Model Info", icon: Cpu },
+  { to: "/credits", label: "Credits", icon: Users },
 ];
 
 /** Inner component that consumes the router context. */
@@ -41,6 +42,8 @@ function AppContent() {
         return "History";
       case "/models":
         return "Model Info";
+      case "/credits":
+        return "Credits";
       default:
         return "PipeVision AI";
     }

@@ -1,4 +1,4 @@
-import { Cpu, History, LayoutDashboard, ScanSearch } from "lucide-react";
+import { Cpu, History, LayoutDashboard, ScanSearch, Users } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { useModelStatus } from "@/app/providers/model-provider";
@@ -15,6 +15,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/detect", label: "Detect", icon: ScanSearch },
   { to: "/history", label: "History", icon: History },
   { to: "/models", label: "Model Info", icon: Cpu },
+  { to: "/credits", label: "Credits", icon: Users },
 ];
 
 interface AppSidebarProps {
